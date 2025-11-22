@@ -1,6 +1,8 @@
 .intel_syntax noprefix
 .global main
 main:
-    mov rax, 76
+    mov rax, 5
+    add rax, 20
+    sub rax, 4
     ret
 .section .note.GNU-stack,"",@progbits
