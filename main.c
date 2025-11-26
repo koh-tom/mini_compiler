@@ -14,17 +14,27 @@ int main(int argc, char **argv) {
     // トークナイズする
     user_input = argv[1];
     token = tokenize();
-    Node *node = expr();
+    program();
 
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
-    // 抽象構文木を下りながらコードを生成する
-    gen(node);
+    // プロローグ
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    printf("    sub rsp, 208\n");
 
-    // スタックトップに式全体の値が残っているのでそれを返り値としてRAXに格納する
-    printf("    pop rax\n");
+    // 抽象構文木を下りながらコードを生成する
+    for (int i = 0; code[i]; i++) {
+        gen(code[i]);
+        // スタックトップに式全体の値が残っているのでそれを返り値としてRAXに格納する
+        printf("    pop rax\n");
+    }
+
+    // エピローグ
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
     printf("    ret\n");
     printf(".section .note.GNU-stack,\"\",@progbits\n");
     return 0;

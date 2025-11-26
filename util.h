@@ -7,10 +7,12 @@
 #include <stdlib.h>
 
 #include "tokenizer.h"
+#include "parser.h"
 
 // グローバル変数
 extern Token *token;
 extern char *user_input;
+extern Node *code[100];
 
 // エラー処理関数
 void error(char *fmt, ...);

@@ -1,4 +1,5 @@
 #include "tokenizer.h"
+
 #include "util.h"
 
 #include <ctype.h>
@@ -13,6 +14,17 @@ bool consume(char *op) {
     }
     token = token->next;
     return true;
+}
+
+// 次のトークンが識別子なら、1つ読み進めてそのトークンを返す。
+// それ以外ならNULLを返す。
+Token *consume_ident() {
+    if (token->kind != TK_IDENT) {
+        return NULL;
+    }
+    Token *tok = token;
+    token = token->next;
+    return tok;
 }
 
 // 次のトークンが正規の記号なら、1つ読み進める。
@@ -72,7 +84,7 @@ Token *tokenize() {
             continue;
         }
 
-        if (strchr("+-*/<>()", *p)) {
+        if (strchr("+-*/<>()=;", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }

@@ -7,6 +7,9 @@ Token *token;
 // 入力文字列
 char *user_input;
 
+// パース結果のノード保存
+Node *code[100];
+
 // エラー監視用の関数
 // printfと同じ引数をとる
 void error(char *fmt, ...) {
