@@ -39,6 +39,10 @@ void gen(Node *node) {
         printf("    pop rbp\n");
         printf("    ret\n");
         return;
+    case ND_FUNCALL:
+        printf("    call %.*s\n", node->funcname_len, node->funcname);
+        printf("    push rax\n");
+        return;
     case ND_BLOCK:
         for (Node *n = node->block; n; n = n->next) {
             gen(n);

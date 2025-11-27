@@ -23,7 +23,14 @@ int main(int argc, char **argv) {
     // プロローグ
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", locals ? locals->offset : 0);
+    int stack_size = locals ? locals->offset : 0;
+    // スタックサイズを16の倍数に丸める
+    if (stack_size == 0) {
+        stack_size = 8;
+    } else {
+        stack_size = (stack_size + 15) / 16 * 16;
+    }
+    printf("    sub rsp, %d\n", stack_size);
 
     // 抽象構文木を下りながらコードを生成する
     for (int i = 0; code[i]; i++) {

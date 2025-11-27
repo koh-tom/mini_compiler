@@ -3,8 +3,9 @@ assert() {
     expected="$1"
     input="$2"
 
-    output/mini_compiler "$input" > tmp.s
-    cc -o output/tmp tmp.s
+    output/mini_compiler "{ $input }" > tmp.s
+    cc -c test.c -o output/test.o
+    cc -o output/tmp tmp.s output/test.o
     output/tmp
     actual="$?"
 
@@ -73,5 +74,9 @@ assert 2 '{ while (2-1) return 2; return 3; }'
 assert 55 '{ i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }'
 assert 3 '{ for (i=0; i<10; i=i+1) j=3; return j; }'
 assert 3 '{ for (;;) return 3; }'
+assert 3 '{ return ret3(); }'
+assert 5 '{ return ret5(); }'
+assert 8 '{ return ret3() + ret5(); }'
+assert 2 '{ return ret5() - ret3(); }'
 
 echo OK

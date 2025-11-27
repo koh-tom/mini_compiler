@@ -3,15 +3,20 @@
 main:
     push rbp
     mov rbp, rsp
-    sub rsp, 0
-.Lbegin0:
-    push 3
+    sub rsp, 8
+    call ret5
+    push rax
+    call ret3
+    push rax
+    pop rdi
+    pop rax
+    sub rax, rdi
+    push rax
     pop rax
     mov rsp, rbp
     pop rbp
     ret
-    jmp .Lbegin0
-.Lend0:
+    pop rax
     pop rax
     pop rax
     mov rsp, rbp
