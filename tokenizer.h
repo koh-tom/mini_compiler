@@ -9,6 +9,7 @@ typedef enum {
     TK_IDENT,    // 識別子
     TK_NUM,      // 整数
     TK_EOF,      // 終端
+    TK_RETURN,   // return
 } TokenKind;
 
 typedef struct Token Token;
@@ -24,6 +25,7 @@ struct Token {
 
 // トークナイザ関数
 bool consume(char *op);
+bool consume_return();
 Token *consume_ident();
 void expect(char *op);
 int expect_number();

@@ -16,6 +16,16 @@ bool consume(char *op) {
     return true;
 }
 
+// 次のトークンがreturnなら、1つ読み進めて真を返す。
+// それ以外なら偽を返す。
+bool consume_return() {
+    if (token->kind != TK_RETURN) {
+        return false;
+    }
+    token = token->next;
+    return true;
+}
+
 // 次のトークンが識別子なら、1つ読み進めてそのトークンを返す。
 // それ以外ならNULLを返す。
 Token *consume_ident() {
@@ -65,6 +75,10 @@ bool startswith(char *p, char *q) {
     return memcmp(p, q, strlen(q)) == 0;
 }
 
+int is_alnum(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || (c == '_');
+}
+
 // 入力も文字列pをトークナイズしてそれを返す。
 Token *tokenize() {
     char *p = user_input;
@@ -86,6 +100,12 @@ Token *tokenize() {
 
         if (strchr("+-*/<>()=;", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
+            continue;
+        }
+
+        if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
+            cur = new_token(TK_RETURN, cur, p, 6);
+            p += 6;
             continue;
         }
 
