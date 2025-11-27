@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     // プロローグ
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, 208\n");
+    printf("    sub rsp, %d\n", locals ? locals->offset : 0);
 
     // 抽象構文木を下りながらコードを生成する
     for (int i = 0; code[i]; i++) {

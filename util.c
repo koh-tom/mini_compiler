@@ -10,6 +10,9 @@ char *user_input;
 // パース結果のノード保存
 Node *code[100];
 
+// ローカル変数
+LVar *locals;
+
 // エラー監視用の関数
 // printfと同じ引数をとる
 void error(char *fmt, ...) {
