@@ -16,30 +16,10 @@ bool consume(char *op) {
     return true;
 }
 
-// 次のトークンがreturnなら、1つ読み進めて真を返す。
+// 次のトークンが指定されたキーワードなら、1つ読み進めて真を返す。
 // それ以外なら偽を返す。
-bool consume_return() {
-    if (token->kind != TK_RETURN) {
-        return false;
-    }
-    token = token->next;
-    return true;
-}
-
-// 次のトークンがifなら、1つ読み進めて真を返す。
-// それ以外なら偽を返す。
-bool consume_if() {
-    if (token->kind != TK_IF) {
-        return false;
-    }
-    token = token->next;
-    return true;
-}
-
-// 次のトークンがelseなら、1つ読み進めて真を返す。
-// それ以外なら偽を返す。
-bool consume_else() {
-    if (token->kind != TK_ELSE) {
+bool consume_keyword(TokenKind kind) {
+    if (token->kind != kind) {
         return false;
     }
     token = token->next;

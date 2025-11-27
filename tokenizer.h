@@ -27,9 +27,7 @@ struct Token {
 
 // トークナイザ関数
 bool consume(char *op);
-bool consume_return();
-bool consume_if();
-bool consume_else();
+bool consume_keyword(TokenKind kind);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();

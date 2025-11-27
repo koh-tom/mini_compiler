@@ -40,20 +40,20 @@ void program() {
 
 Node *stmt() {
     Node *node;
-    if (consume_if()) {
+    if (consume_keyword(TK_IF)) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_IF;
         expect("(");
         node->cond = expr();
         expect(")");
         node->then = stmt();
-        if (consume_else()) {
+        if (consume_keyword(TK_ELSE)) {
             node->els = stmt();
         } else {
             node->els = NULL;
         }
         return node;
-    } else if (consume_return()) {
+    } else if (consume_keyword(TK_RETURN)) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
