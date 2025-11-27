@@ -66,4 +66,7 @@ assert 3 'while (0) return 2; return 3;'
 assert 3 'while (1-1) return 2; return 3;'
 assert 2 'while (1) return 2; return 3;'
 assert 2 'while (2-1) return 2; return 3;'
+assert 55 'i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j;'
+assert 3 'for (i=0; i<10; i=i+1) j=3; return j;'
+assert 3 'for (;;) return 3;'
 echo OK

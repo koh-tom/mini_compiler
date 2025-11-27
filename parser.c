@@ -40,7 +40,25 @@ void program() {
 
 Node *stmt() {
     Node *node;
-    if (consume_keyword(TK_WHILE)) {
+    if (consume_keyword(TK_FOR)) {
+        node = calloc(1, sizeof(Node));
+        node->kind = ND_FOR;
+        expect("(");
+        if (!consume(";")) {
+            node->init = expr();
+            expect(";");
+        }
+        if (!consume(";")) {
+            node->cond = expr();
+            expect(";");
+        }
+        if (!consume(")")) {
+            node->inc = expr();
+            expect(")");
+        }
+        node->then = stmt();
+        return node;
+    } else if (consume_keyword(TK_WHILE)) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_WHILE;
         expect("(");

@@ -19,6 +19,7 @@ typedef enum {
     ND_RETURN, // return
     ND_IF, // if
     ND_WHILE, // while
+    ND_FOR, // for
 } NodeKind;
 
 typedef struct Node Node;
@@ -33,6 +34,8 @@ struct Node {
     Node *cond;    // 条件式
     Node *then;    // then節
     Node *els;     // else節
+    Node *init;    // kindがND_FORの場合の初期化式
+    Node *inc;     // kindがND_FORの場合の増分式
 }; 
 
 typedef struct LVar LVar;
