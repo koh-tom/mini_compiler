@@ -3,7 +3,7 @@ assert() {
     expected="$1"
     input="$2"
 
-    output/mini_compiler "{ $input }" > tmp.s
+    output/mini_compiler "$input" > tmp.s
     cc -c test.c -o output/test.o
     cc -o output/tmp tmp.s output/test.o
     output/tmp
@@ -78,5 +78,10 @@ assert 3 '{ return ret3(); }'
 assert 5 '{ return ret5(); }'
 assert 8 '{ return ret3() + ret5(); }'
 assert 2 '{ return ret5() - ret3(); }'
+assert 8 '{ return add2(3, 5); }'
+assert 2 '{ return sub(5, 3); }'
+assert 21 '{ return add6(1,2,3,4,5,6); }'
+assert 66 '{ return add6(1,2,add6(3,4,5,6,7,8),9,10,11); }'
+assert 136 '{ return add6(1,2,add6(3,add6(4,5,6,7,8,9),10,11,12,13),14,15,16); }'
 
 echo OK

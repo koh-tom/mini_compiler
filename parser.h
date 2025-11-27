@@ -43,6 +43,7 @@ struct Node {
     Node *next;       // 次の文（ブロック内で使用）
     char *funcname;   // kindがND_FUNCCALLの場合の関数名
     int funcname_len; // 関数名の長さ
+    Node *args;       // kindがND_FUNCCALLの場合の引数（リンクリスト）
 }; 
 
 typedef struct LVar LVar;

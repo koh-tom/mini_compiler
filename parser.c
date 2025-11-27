@@ -193,11 +193,22 @@ Node *primary() {
     Token *tok = consume_ident();
     if (tok) {
         if (consume("(")) {
-            expect(")");
             Node *node = calloc(1, sizeof(Node));
             node->kind = ND_FUNCALL;
             node->funcname = tok->str;
             node->funcname_len = tok->len;
+
+            // 引数をパース
+            Node head = {};
+            Node *cur = &head;
+            while (!consume(")")) {
+                if (cur != &head) {
+                    expect(",");
+                }
+                cur->next = expr();
+                cur = cur->next;
+            }
+            node->args = head.next;
             return node;
         }
         Node *node = calloc(1, sizeof(Node));

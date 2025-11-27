@@ -4,6 +4,9 @@
 
 #include <stdio.h>
 
+// x86-64 ABIの引数レジスタ
+static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 void gen_lvar(Node *node) {
     if (node->kind != ND_LVAR) {
         error("代入の左辺値が変数ではありません。\n");
@@ -39,10 +42,34 @@ void gen(Node *node) {
         printf("    pop rbp\n");
         printf("    ret\n");
         return;
-    case ND_FUNCALL:
+    case ND_FUNCALL: {
+        // 引数を評価してスタックにプッシュ
+        int nargs = 0;
+        for (Node *arg = node->args; arg; arg = arg->next) {
+            gen(arg);
+            nargs++;
+        }
+
+        // 引数をレジスタにポップ（逆順）
+        for (int i = nargs - 1; i >= 0; i--) {
+            printf("    pop %s\n", argreg[i]);
+        }
+
+        // RSPを16バイトに丸め込み
+        int alignment = (nargs % 2 == 0) ? 8 : 0;
+        if (alignment > 0) {
+            printf("    sub rsp, %d\n", alignment);
+        }
+
         printf("    call %.*s\n", node->funcname_len, node->funcname);
+
+        if (alignment > 0) {
+            printf("    add rsp, %d\n", alignment);
+        }
+
         printf("    push rax\n");
         return;
+    }
     case ND_BLOCK:
         for (Node *n = node->block; n; n = n->next) {
             gen(n);
