@@ -40,7 +40,19 @@ void program() {
 
 Node *stmt() {
     Node *node;
-    if (consume_keyword(TK_FOR)) {
+    if (consume("{")) {
+        node = calloc(1, sizeof(Node));
+        node->kind = ND_BLOCK;
+
+        Node head = {};
+        Node *cur = &head;
+        while (!consume("}")) {
+            cur->next = stmt();
+            cur = cur->next;
+        }
+        node->block = head.next;
+        return node;
+    } else if (consume_keyword(TK_FOR)) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_FOR;
         expect("(");
@@ -83,6 +95,11 @@ Node *stmt() {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
+    } else if (consume(";")) {
+        node = calloc(1, sizeof(Node));
+        node->kind = ND_NUM;
+        node->val = 0; // 捨てるだけ
+        return node;
     } else {
         node = expr();
     }

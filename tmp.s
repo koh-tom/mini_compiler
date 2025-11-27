@@ -13,6 +13,7 @@ main:
     jmp .Lbegin0
 .Lend0:
     pop rax
+    pop rax
     mov rsp, rbp
     pop rbp
     ret

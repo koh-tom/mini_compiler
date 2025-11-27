@@ -9,6 +9,7 @@ typedef enum {
     TK_IDENT,    // 識別子
     TK_NUM,      // 整数
     TK_EOF,      // 終端
+    TK_SEMI,     // ;
     TK_RETURN,   // return
     TK_IF,       // if
     TK_ELSE,     // else

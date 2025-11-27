@@ -10,6 +10,7 @@ typedef enum {
     ND_MUL, // *
     ND_DIV, // /
     ND_NUM, // 数値
+    ND_SEMI, // ;
     ND_EQ,  // ==
     ND_NE,  // !=
     ND_LT,  // <
@@ -20,6 +21,7 @@ typedef enum {
     ND_IF, // if
     ND_WHILE, // while
     ND_FOR, // for
+    ND_BLOCK, // {}
 } NodeKind;
 
 typedef struct Node Node;
@@ -36,6 +38,8 @@ struct Node {
     Node *els;     // else節
     Node *init;    // kindがND_FORの場合の初期化式
     Node *inc;     // kindがND_FORの場合の増分式
+    Node *block;   // kindがND_BLOCKの場合の文のリスト
+    Node *next;    // 次の文（ブロック内で使用）
 }; 
 
 typedef struct LVar LVar;
