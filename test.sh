@@ -62,5 +62,8 @@ assert 3 'if (1>0) return 3; else return 4;'
 assert 4 'if (1<0) return 3; else return 4;'
 assert 3 'if (1>=0) return 3; else return 4;'
 assert 4 'if (1<=0) return 3; else return 4;'
-
+assert 3 'while (0) return 2; return 3;'
+assert 3 'while (1-1) return 2; return 3;'
+assert 2 'while (1) return 2; return 3;'
+assert 2 'while (2-1) return 2; return 3;'
 echo OK

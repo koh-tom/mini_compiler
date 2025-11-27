@@ -12,6 +12,7 @@ typedef enum {
     TK_RETURN,   // return
     TK_IF,       // if
     TK_ELSE,     // else
+    TK_WHILE,    // while
 } TokenKind;
 
 typedef struct Token Token;

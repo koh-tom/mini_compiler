@@ -54,6 +54,18 @@ void gen(Node *node) {
         printf(".Lend%d:\n", label);
         return;
     }
+    case ND_WHILE: {
+        int label = label_count++;
+        printf(".Lbegin%d:\n", label);
+        gen(node->cond);
+        printf("    pop rax\n");
+        printf("    cmp rax, 0\n");
+        printf("    je .Lend%d\n", label);
+        gen(node->then);
+        printf("    jmp .Lbegin%d\n", label);
+        printf(".Lend%d:\n", label);
+        return;
+    }
     }
 
     gen(node->lhs);
