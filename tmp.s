@@ -5,14 +5,29 @@ main:
     mov rbp, rsp
     sub rsp, 0
     push 1
+    push 0
+    pop rdi
     pop rax
-    push 2
+    cmp rax, rdi
+    setle al
+    movzb rax, al
+    push rax
     pop rax
+    cmp rax, 0
+    je .Lelse0
     push 3
     pop rax
     mov rsp, rbp
     pop rbp
     ret
+    jmp .Lend0
+.Lelse0:
+    push 4
+    pop rax
+    mov rsp, rbp
+    pop rbp
+    ret
+.Lend0:
     pop rax
     mov rsp, rbp
     pop rbp

@@ -14,6 +14,7 @@ extern Token *token;
 extern char *user_input;
 extern Node *code[100];
 extern LVar *locals;
+extern int label_count;
 
 // エラー処理関数
 void error(char *fmt, ...);

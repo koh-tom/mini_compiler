@@ -13,6 +13,9 @@ Node *code[100];
 // ローカル変数
 LVar *locals;
 
+// ラベルカウンタ
+int label_count;
+
 // エラー監視用の関数
 // printfと同じ引数をとる
 void error(char *fmt, ...) {
