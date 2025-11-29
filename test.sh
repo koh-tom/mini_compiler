@@ -93,7 +93,11 @@ assert 7 'int main() { return add2(3,4); } int add2(int x, int y) { return x+y; 
 assert 1 'int main() { return sub2(4,3); } int sub2(int x, int y) { return x-y; }'
 assert 55 'int main() { return fib(9); } int fib(int x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }'
 assert 3 'int main() { int x; int *y; x=3; y=&x; return *y; }'
-assert 3 'int main() { int x; int y; int *z; x=3; y=5; z=&y+8; return *z; }'
 assert 3 'int main() { int x; int *y; y=&x; *y=3; return x; }'
+assert 4 'int main() { int *p; alloc4(&p, 1, 2, 4, 8); return *(p + 2); }'
+assert 8 'int main() { int *p; alloc4(&p, 1, 2, 4, 8); return *(p + 3); }'
+assert 2 'int main() { int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 3; return *(q - 2); }'
+assert 4 'int main() { int *p; alloc4(&p, 1, 2, 4, 8); int *q; q = p + 2; return *q; }'
+assert 2 'int main() { int *p; alloc4(&p, 1, 2, 4, 8); return *(1 + p); }'
 
 echo OK

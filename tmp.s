@@ -6,33 +6,32 @@ main:
     sub rsp, 16
     push 0
     pop rax
-    push 0
-    pop rax
-    mov rax, rbp
-    sub rax, 16
-    push rax
     mov rax, rbp
     sub rax, 8
     push rax
+    push 1
+    push 2
+    push 4
+    push 8
+    pop r8
+    pop rcx
+    pop rdx
+    pop rsi
     pop rdi
-    pop rax
-    mov [rax], rdi
-    push rdi
+    call alloc4
+    push rax
     pop rax
     mov rax, rbp
-    sub rax, 16
+    sub rax, 8
     push rax
     pop rax
     mov rax, [rax]
     push rax
-    push 3
+    push 1
     pop rdi
     pop rax
-    mov [rax], rdi
-    push rdi
-    pop rax
-    mov rax, rbp
-    sub rax, 8
+    imul rdi, 4
+    add rax, rdi
     push rax
     pop rax
     mov rax, [rax]

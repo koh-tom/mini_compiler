@@ -26,6 +26,8 @@ typedef enum {
     ND_FUNCDEF, // 関数定義
     ND_ADDR, // &
     ND_DEREF, // *
+    ND_PTR_ADD, // ポインタ + 整数
+    ND_PTR_SUB, // ポインタ - 整数
 } NodeKind;
 
 typedef struct LVar LVar;
@@ -78,6 +80,7 @@ struct LVar {
 // パーサー関数
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
+int size_of(Type *ty);
 void program();
 Node *function();
 Node *stmt();

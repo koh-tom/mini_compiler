@@ -45,6 +45,13 @@ Type *new_type(TypeKind kind, Type *ptr_to) {
     return ty;
 }
 
+int size_of(Type *ty) {
+    if (ty->kind == TY_INT) {
+        return 4;
+    }
+    return 8;
+}
+
 Type *expect_type() {
     if (!consume_keyword(TK_INT)) {
         error("型ではありません");
@@ -178,9 +185,12 @@ Node *stmt() {
         node->kind = ND_RETURN;
         node->lhs = expr();
     } else if (consume_keyword(TK_INT)) {
-        // 変数宣言: int x;
-        while (consume("*"))
-            ;
+        // 変数宣言: int x; または int *p;
+        Type *ty = new_type(TY_INT, NULL);
+        while (consume("*")) {
+            ty = new_type(TY_PTR, ty);
+        }
+
         Token *tok = consume_ident();
         if (!tok) {
             error("変数名がありません");
@@ -196,6 +206,7 @@ Node *stmt() {
         lvar->name = tok->str;
         lvar->len = tok->len;
         lvar->offset = locals ? locals->offset + 8 : 8;
+        lvar->ty = ty;
         locals = lvar;
 
         expect(";");
@@ -267,9 +278,35 @@ Node *add() {
 
     for (;;) {
         if (consume("+")) {
-            node = new_node(ND_ADD, node, mul());
+            Node *rhs = mul();
+            // ポインタ + 整数 の場合
+            if (node->ty && node->ty->kind == TY_PTR) {
+                Node *ptr_add = new_node(ND_PTR_ADD, node, rhs);
+                ptr_add->ty = node->ty;
+                node = ptr_add;
+            }
+            // 整数 + ポインタ の場合
+            else if (rhs->ty && rhs->ty->kind == TY_PTR) {
+                Node *ptr_add = new_node(ND_PTR_ADD, rhs, node);
+                ptr_add->ty = rhs->ty;
+                node = ptr_add;
+            }
+            // 通常の加算
+            else {
+                node = new_node(ND_ADD, node, rhs);
+            }
         } else if (consume("-")) {
-            node = new_node(ND_SUB, node, mul());
+            Node *rhs = mul();
+            // ポインタ - 整数 の場合
+            if (node->ty && node->ty->kind == TY_PTR) {
+                Node *ptr_sub = new_node(ND_PTR_SUB, node, rhs);
+                ptr_sub->ty = node->ty;
+                node = ptr_sub;
+            }
+            // 通常の減算
+            else {
+                node = new_node(ND_SUB, node, rhs);
+            }
         } else {
             return node;
         }
@@ -296,9 +333,19 @@ Node *unary() {
     } else if (consume("-")) {
         return new_node(ND_SUB, new_node_num(0), unary());
     } else if (consume("&")) {
-        return new_node(ND_ADDR, unary(), NULL);
+        Node *operand = unary();
+        Node *addr = new_node(ND_ADDR, operand, NULL);
+        if (operand->ty) {
+            addr->ty = new_type(TY_PTR, operand->ty);
+        }
+        return addr;
     } else if (consume("*")) {
-        return new_node(ND_DEREF, unary(), NULL);
+        Node *operand = unary();
+        Node *deref = new_node(ND_DEREF, operand, NULL);
+        if (operand->ty && operand->ty->kind == TY_PTR) {
+            deref->ty = operand->ty->ptr_to;
+        }
+        return deref;
     }
     return primary();
 }
@@ -330,6 +377,7 @@ Node *primary() {
         LVar *lvar = find_lvar(tok);
         if (lvar) {
             node->offset = lvar->offset;
+            node->ty = lvar->ty;
         } else {
             error("未定義の変数です");
         }

@@ -174,6 +174,24 @@ void gen(Node *node) {
         printf("    mov rax, [rax]\n");
         printf("    push rax\n");
         return;
+    case ND_PTR_ADD:
+        gen(node->lhs); // ポインタ
+        gen(node->rhs); // 整数
+        printf("    pop rdi\n");
+        printf("    pop rax\n");
+        printf("    imul rdi, %d\n", size_of(node->lhs->ty->ptr_to));
+        printf("    add rax, rdi\n");
+        printf("    push rax\n");
+        return;
+    case ND_PTR_SUB:
+        gen(node->lhs); // ポインタ
+        gen(node->rhs); // 整数
+        printf("    pop rdi\n");
+        printf("    pop rax\n");
+        printf("    imul rdi, %d\n", size_of(node->lhs->ty->ptr_to));
+        printf("    sub rax, rdi\n");
+        printf("    push rax\n");
+        return;
     }
 
     gen(node->lhs);
