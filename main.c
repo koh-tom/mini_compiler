@@ -17,12 +17,12 @@ int main(int argc, char **argv) {
     program();
 
     printf(".intel_syntax noprefix\n");
-    
+
     // 各関数のコード生成
     for (int i = 0; code[i]; i++) {
         gen_function(code[i]);
     }
-    
+
     printf(".section .note.GNU-stack,\"\",@progbits\n");
     return 0;
 }

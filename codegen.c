@@ -15,11 +15,11 @@ void gen_function(Node *fn) {
         printf(".global main\n");
     }
     printf("%.*s:\n", fn->funcname_len, fn->funcname);
-    
+
     // プロローグ
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    
+
     // ローカル変数用のスタック確保
     int stack_size = fn->locals ? fn->locals->offset : 0;
     if (stack_size == 0) {
@@ -28,17 +28,17 @@ void gen_function(Node *fn) {
         stack_size = (stack_size + 15) / 16 * 16;
     }
     printf("    sub rsp, %d\n", stack_size);
-    
+
     // 引数をスタックにコピー
     int i = 0;
     for (Node *param = fn->params; param; param = param->next) {
         printf("    mov [rbp-%d], %s\n", param->offset, argreg[i++]);
     }
-    
+
     // 関数本体
     gen(fn->body);
     printf("    pop rax\n");
-    
+
     // エピローグ
     printf("    mov rsp, rbp\n");
     printf("    pop rbp\n");
@@ -161,6 +161,15 @@ void gen(Node *node) {
         printf(".Lend%d:\n", label);
         return;
     }
+    case ND_ADDR:
+        gen_lvar(node->lhs);
+        return;
+    case ND_DEREF:
+        gen(node->lhs);
+        printf("    pop rax\n");
+        printf("    mov rax, [rax]\n");
+        printf("    push rax\n");
+        return;
     }
 
     gen(node->lhs);

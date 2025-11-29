@@ -24,6 +24,8 @@ typedef enum {
     ND_BLOCK, // {}
     ND_FUNCALL, //関数呼出
     ND_FUNCDEF, // 関数定義
+    ND_ADDR, // &
+    ND_DEREF, // *
 } NodeKind;
 
 typedef struct LVar LVar;
@@ -50,8 +52,6 @@ struct Node {
     Node *body;       // kindがND_FUNCDEFの場合の関数本体
     LVar *locals;     // kindがND_FUNCDEFの場合のローカル変数リスト
 }; 
-
-
 
 //ローカル変数の型
 struct LVar {

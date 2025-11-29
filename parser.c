@@ -42,13 +42,13 @@ void program() {
 Node *function() {
     // 関数ごとにローカル変数をリセット
     locals = NULL;
-    
+
     // 1. 関数名を読む
     Token *tok = consume_ident();
     if (!tok) {
         error("関数名がありません");
     }
-    
+
     // 2. 引数リストをパース
     expect("(");
     Node head = {};
@@ -57,12 +57,12 @@ Node *function() {
         if (cur != &head) {
             expect(",");
         }
-        
+
         Token *param = consume_ident();
         if (!param) {
             error("引数名がありません");
         }
-        
+
         // 引数をローカル変数として登録
         LVar *lvar = calloc(1, sizeof(LVar));
         lvar->next = locals;
@@ -70,7 +70,7 @@ Node *function() {
         lvar->len = param->len;
         lvar->offset = locals ? locals->offset + 8 : 8;
         locals = lvar;
-        
+
         // 引数ノードを作成
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_LVAR;
@@ -78,10 +78,10 @@ Node *function() {
         cur->next = node;
         cur = cur->next;
     }
-    
+
     // 3. 関数本体をパース
     Node *body = stmt();
-    
+
     // 4. 関数定義ノードを作成
     Node *fn = calloc(1, sizeof(Node));
     fn->kind = ND_FUNCDEF;
@@ -89,8 +89,8 @@ Node *function() {
     fn->funcname_len = tok->len;
     fn->params = head.next;
     fn->body = body;
-    fn->locals = locals;  // この関数のローカル変数を保存
-    
+    fn->locals = locals; // この関数のローカル変数を保存
+
     return fn;
 }
 
@@ -241,6 +241,10 @@ Node *unary() {
         return unary();
     } else if (consume("-")) {
         return new_node(ND_SUB, new_node_num(0), unary());
+    } else if (consume("&")) {
+        return new_node(ND_ADDR, unary(), NULL);
+    } else if (consume("*")) {
+        return new_node(ND_DEREF, unary(), NULL);
     }
     return primary();
 }
