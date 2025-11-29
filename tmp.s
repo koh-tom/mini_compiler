@@ -4,6 +4,12 @@ main:
     push rbp
     mov rbp, rsp
     sub rsp, 32
+    push 0
+    pop rax
+    push 0
+    pop rax
+    push 0
+    pop rax
     mov rax, rbp
     sub rax, 8
     push rax

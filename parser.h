@@ -31,11 +31,24 @@ typedef enum {
 typedef struct LVar LVar;
 typedef struct Node Node;
 
+typedef struct Type Type;
+
+typedef enum {
+    TY_INT,
+    TY_PTR,
+} TypeKind;
+
+struct Type {
+    TypeKind kind;
+    Type *ptr_to;
+};
+
 // 抽象構文木のノードの型
 struct Node {
     NodeKind kind;    // ノードの型
     Node *lhs;        // 左辺
     Node *rhs;        // 右辺
+    Type *ty;         // 型 (int, int*, ...)
     int val;          // kindがND_NUMの場合の数値
     int offset;       // kindがND_LVARの場合のオフセット
     Node *cond;       // 条件式
@@ -59,6 +72,7 @@ struct LVar {
     char *name; // 変数の名前
     int len;    // 名前の長さ
     int offset; // RBPからのオフセット
+    Type *ty;   // 型
 };
 
 // パーサー関数

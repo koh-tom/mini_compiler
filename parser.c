@@ -38,12 +38,33 @@ void program() {
     code[i] = NULL;
 }
 
+Type *new_type(TypeKind kind, Type *ptr_to) {
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = kind;
+    ty->ptr_to = ptr_to;
+    return ty;
+}
+
+Type *expect_type() {
+    if (!consume_keyword(TK_INT)) {
+        error("型ではありません");
+    }
+    Type *ty = new_type(TY_INT, NULL);
+    while (consume("*")) {
+        ty = new_type(TY_PTR, ty);
+    }
+    return ty;
+}
+
 // 関数定義をパース: name(param1, param2, ...) { body }
 Node *function() {
     // 関数ごとにローカル変数をリセット
     locals = NULL;
 
-    // 1. 関数名を読む
+    // 1. 戻り値の型(int)を読む
+    Type *ret_ty = expect_type();
+
+    // 2. 関数名を読む
     Token *tok = consume_ident();
     if (!tok) {
         error("関数名がありません");
@@ -58,6 +79,8 @@ Node *function() {
             expect(",");
         }
 
+        Type *ty = expect_type();
+
         Token *param = consume_ident();
         if (!param) {
             error("引数名がありません");
@@ -69,12 +92,14 @@ Node *function() {
         lvar->name = param->str;
         lvar->len = param->len;
         lvar->offset = locals ? locals->offset + 8 : 8;
+        lvar->ty = ty;
         locals = lvar;
 
         // 引数ノードを作成
         Node *node = calloc(1, sizeof(Node));
         node->kind = ND_LVAR;
         node->offset = lvar->offset;
+        node->ty = ty;
         cur->next = node;
         cur = cur->next;
     }
@@ -90,6 +115,7 @@ Node *function() {
     fn->params = head.next;
     fn->body = body;
     fn->locals = locals; // この関数のローカル変数を保存
+    fn->ty = ret_ty;     // 戻り値の型を保存
 
     return fn;
 }
@@ -151,6 +177,34 @@ Node *stmt() {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
+    } else if (consume_keyword(TK_INT)) {
+        // 変数宣言: int x;
+        while (consume("*"))
+            ;
+        Token *tok = consume_ident();
+        if (!tok) {
+            error("変数名がありません");
+        }
+
+        // 変数が既に定義されていないか確認
+        if (find_lvar(tok)) {
+            error("変数が既に定義されています");
+        }
+
+        LVar *lvar = calloc(1, sizeof(LVar));
+        lvar->next = locals;
+        lvar->name = tok->str;
+        lvar->len = tok->len;
+        lvar->offset = locals ? locals->offset + 8 : 8;
+        locals = lvar;
+
+        expect(";");
+
+        // ND_NUM(0)を返して実質スキップ
+        node = calloc(1, sizeof(Node));
+        node->kind = ND_NUM;
+        node->val = 0;
+        return node;
     } else if (consume(";")) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_NUM;
@@ -277,13 +331,7 @@ Node *primary() {
         if (lvar) {
             node->offset = lvar->offset;
         } else {
-            lvar = calloc(1, sizeof(LVar));
-            lvar->next = locals;
-            lvar->name = tok->str;
-            lvar->len = tok->len;
-            lvar->offset = locals ? locals->offset + 8 : 8;
-            node->offset = lvar->offset;
-            locals = lvar;
+            error("未定義の変数です");
         }
         return node;
     }

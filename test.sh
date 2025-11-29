@@ -3,9 +3,9 @@ assert() {
     expected="$1"
     input="$2"
 
-    # 入力が { で始まる場合は main 関数でラップする
+    # 入力が { で始まる場合は int main() でラップする
     if [[ "$input" == "{"* ]]; then
-        input="main() $input"
+        input="int main() $input"
     fi
 
     output/mini_compiler "$input" > tmp.s
@@ -48,11 +48,11 @@ assert 0 '{ return 1>2; }'
 assert 1 '{ return 1>=0; }'
 assert 1 '{ return 1>=1; }'
 assert 0 '{ return 1>=2; }'
-assert 3 '{ a=3; return a; }'
-assert 8 '{ a=3; z=5; return a+z; }'
-assert 6 '{ a=b=3; return a+b; }'
-assert 3 '{ foo=3; return foo; }'
-assert 8 '{ foo123=3; bar=5; return foo123+bar; }'
+assert 3 '{ int a; a=3; return a; }'
+assert 8 '{ int a; int z; a=3; z=5; return a+z; }'
+assert 6 '{ int a; int b; a=b=3; return a+b; }'
+assert 3 '{ int foo; foo=3; return foo; }'
+assert 8 '{ int foo123; int bar; foo123=3; bar=5; return foo123+bar; }'
 assert 1 '{ return 1; 2; 3; }'
 assert 2 '{ 1; return 2; 3; }'
 assert 3 '{ 1; 2; return 3; }'
@@ -76,8 +76,8 @@ assert 3 '{ while (0) return 2; return 3; }'
 assert 3 '{ while (1-1) return 2; return 3; }'
 assert 2 '{ while (1) return 2; return 3; }'
 assert 2 '{ while (2-1) return 2; return 3; }'
-assert 55 '{ i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }'
-assert 3 '{ for (i=0; i<10; i=i+1) j=3; return j; }'
+assert 55 '{ int i; int j; i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }'
+assert 3 '{ int i; int j; for (i=0; i<10; i=i+1) j=3; return j; }'
 assert 3 '{ for (;;) return 3; }'
 assert 3 '{ return ret3(); }'
 assert 5 '{ return ret5(); }'
@@ -88,11 +88,11 @@ assert 2 '{ return sub(5, 3); }'
 assert 21 '{ return add6(1,2,3,4,5,6); }'
 assert 66 '{ return add6(1,2,add6(3,4,5,6,7,8),9,10,11); }'
 assert 136 '{ return add6(1,2,add6(3,add6(4,5,6,7,8,9),10,11,12,13),14,15,16); }'
-assert 32 'main() { return ret32(); } ret32() { return 32; }'
-assert 7 'main() { return add2(3,4); } add2(x, y) { return x+y; }'
-assert 1 'main() { return sub2(4,3); } sub2(x, y) { return x-y; }'
-assert 55 'main() { return fib(9); } fib(x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }'
-assert 3 'main() { x=3; y=&x; return *y; }'
-assert 3 'main() { x=3; y=5; z=&y+8; return *z; }'
+assert 32 'int main() { return ret32(); } int ret32() { return 32; }'
+assert 7 'int main() { return add2(3,4); } int add2(int x, int y) { return x+y; }'
+assert 1 'int main() { return sub2(4,3); } int sub2(int x, int y) { return x-y; }'
+assert 55 'int main() { return fib(9); } int fib(int x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }'
+assert 3 'int main() { int x; int *y; x=3; y=&x; return *y; }'
+assert 3 'int main() { int x; int y; int *z; x=3; y=5; z=&y+8; return *z; }'
 
 echo OK
