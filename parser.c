@@ -33,9 +33,65 @@ LVar *find_lvar(Token *tok) {
 void program() {
     int i = 0;
     while (!at_eof()) {
-        code[i++] = stmt();
+        code[i++] = function();
     }
     code[i] = NULL;
+}
+
+// 関数定義をパース: name(param1, param2, ...) { body }
+Node *function() {
+    // 関数ごとにローカル変数をリセット
+    locals = NULL;
+    
+    // 1. 関数名を読む
+    Token *tok = consume_ident();
+    if (!tok) {
+        error("関数名がありません");
+    }
+    
+    // 2. 引数リストをパース
+    expect("(");
+    Node head = {};
+    Node *cur = &head;
+    while (!consume(")")) {
+        if (cur != &head) {
+            expect(",");
+        }
+        
+        Token *param = consume_ident();
+        if (!param) {
+            error("引数名がありません");
+        }
+        
+        // 引数をローカル変数として登録
+        LVar *lvar = calloc(1, sizeof(LVar));
+        lvar->next = locals;
+        lvar->name = param->str;
+        lvar->len = param->len;
+        lvar->offset = locals ? locals->offset + 8 : 8;
+        locals = lvar;
+        
+        // 引数ノードを作成
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_LVAR;
+        node->offset = lvar->offset;
+        cur->next = node;
+        cur = cur->next;
+    }
+    
+    // 3. 関数本体をパース
+    Node *body = stmt();
+    
+    // 4. 関数定義ノードを作成
+    Node *fn = calloc(1, sizeof(Node));
+    fn->kind = ND_FUNCDEF;
+    fn->funcname = tok->str;
+    fn->funcname_len = tok->len;
+    fn->params = head.next;
+    fn->body = body;
+    fn->locals = locals;  // この関数のローカル変数を保存
+    
+    return fn;
 }
 
 Node *stmt() {

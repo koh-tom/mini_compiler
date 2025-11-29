@@ -5,6 +5,7 @@
 
 // コード生成関数
 void gen(Node *node);
+void gen_function(Node *fn);
 
 // 左辺値を評価する関数
 void gen_lvar(Node *node);

@@ -3,9 +3,47 @@
 #include "util.h"
 
 #include <stdio.h>
+#include <string.h>
 
 // x86-64 ABIの引数レジスタ
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
+// 関数定義のコード生成
+void gen_function(Node *fn) {
+    // 関数ラベル
+    if (strncmp(fn->funcname, "main", 4) == 0 && fn->funcname_len == 4) {
+        printf(".global main\n");
+    }
+    printf("%.*s:\n", fn->funcname_len, fn->funcname);
+    
+    // プロローグ
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    
+    // ローカル変数用のスタック確保
+    int stack_size = fn->locals ? fn->locals->offset : 0;
+    if (stack_size == 0) {
+        stack_size = 8;
+    } else {
+        stack_size = (stack_size + 15) / 16 * 16;
+    }
+    printf("    sub rsp, %d\n", stack_size);
+    
+    // 引数をスタックにコピー
+    int i = 0;
+    for (Node *param = fn->params; param; param = param->next) {
+        printf("    mov [rbp-%d], %s\n", param->offset, argreg[i++]);
+    }
+    
+    // 関数本体
+    gen(fn->body);
+    printf("    pop rax\n");
+    
+    // エピローグ
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
+    printf("    ret\n");
+}
 
 void gen_lvar(Node *node) {
     if (node->kind != ND_LVAR) {

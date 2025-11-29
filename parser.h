@@ -23,8 +23,10 @@ typedef enum {
     ND_FOR, // for
     ND_BLOCK, // {}
     ND_FUNCALL, //関数呼出
+    ND_FUNCDEF, // 関数定義
 } NodeKind;
 
+typedef struct LVar LVar;
 typedef struct Node Node;
 
 // 抽象構文木のノードの型
@@ -41,12 +43,15 @@ struct Node {
     Node *inc;        // kindがND_FORの場合の増分式
     Node *block;      // kindがND_BLOCKの場合の文のリスト
     Node *next;       // 次の文（ブロック内で使用）
-    char *funcname;   // kindがND_FUNCCALLの場合の関数名
+    char *funcname;   // kindがND_FUNCALL/ND_FUNCDEFの場合の関数名
     int funcname_len; // 関数名の長さ
     Node *args;       // kindがND_FUNCCALLの場合の引数（リンクリスト）
+    Node *params;     // kindがND_FUNCDEFの場合の仮引数（リンクリスト）
+    Node *body;       // kindがND_FUNCDEFの場合の関数本体
+    LVar *locals;     // kindがND_FUNCDEFの場合のローカル変数リスト
 }; 
 
-typedef struct LVar LVar;
+
 
 //ローカル変数の型
 struct LVar {
@@ -60,6 +65,7 @@ struct LVar {
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 void program();
+Node *function();
 Node *stmt();
 Node *expr();
 Node *assign();

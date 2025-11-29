@@ -4,51 +4,80 @@ main:
     push rbp
     mov rbp, rsp
     sub rsp, 8
-    push 1
-    push 2
-    push 3
-    push 4
-    push 5
-    push 6
-    push 7
-    push 8
     push 9
-    pop r9
-    pop r8
-    pop rcx
-    pop rdx
-    pop rsi
     pop rdi
-    sub rsp, 8
-    call add6
-    add rsp, 8
+    call fib
     push rax
-    push 10
-    push 11
-    push 12
-    push 13
-    pop r9
-    pop r8
-    pop rcx
-    pop rdx
-    pop rsi
-    pop rdi
-    sub rsp, 8
-    call add6
-    add rsp, 8
+    pop rax
+    mov rsp, rbp
+    pop rbp
+    ret
+    pop rax
+    pop rax
+    mov rsp, rbp
+    pop rbp
+    ret
+fib:
+    push rbp
+    mov rbp, rsp
+    sub rsp, 16
+    mov [rbp-8], rdi
+    mov rax, rbp
+    sub rax, 8
     push rax
-    push 14
-    push 15
-    push 16
-    pop r9
-    pop r8
-    pop rcx
-    pop rdx
-    pop rsi
+    pop rax
+    mov rax, [rax]
+    push rax
+    push 1
     pop rdi
-    sub rsp, 8
-    call add6
-    add rsp, 8
+    pop rax
+    cmp rax, rdi
+    setle al
+    movzb rax, al
+    push rax
+    pop rax
+    cmp rax, 0
+    je .Lelse0
+    push 1
+    pop rax
+    mov rsp, rbp
+    pop rbp
+    ret
+    jmp .Lend0
+.Lelse0:
+.Lend0:
+    pop rax
+    mov rax, rbp
+    sub rax, 8
+    push rax
+    pop rax
+    mov rax, [rax]
+    push rax
+    push 1
+    pop rdi
+    pop rax
+    sub rax, rdi
+    push rax
+    pop rdi
+    call fib
+    push rax
+    mov rax, rbp
+    sub rax, 8
+    push rax
+    pop rax
+    mov rax, [rax]
+    push rax
+    push 2
+    pop rdi
+    pop rax
+    sub rax, rdi
+    push rax
+    pop rdi
+    call fib
+    push rax
+    pop rdi
+    pop rax
+    add rax, rdi
     push rax
     pop rax
     mov rsp, rbp
