@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "tokenizer.h"
+#include <stddef.h>
 
 // 抽象構文木のノードの種類
 typedef enum {
@@ -38,11 +39,13 @@ typedef struct Type Type;
 typedef enum {
     TY_INT,
     TY_PTR,
+    TY_ARRAY,
 } TypeKind;
 
 struct Type {
     TypeKind kind;
     Type *ptr_to;
+    size_t array_size; // 配列のサイズ
 };
 
 // 抽象構文木のノードの型

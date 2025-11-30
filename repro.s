@@ -6,49 +6,37 @@ main:
     sub rsp, 16
     push 0
     pop rax
+    push 0
+    pop rax
     mov rax, rbp
-    sub rax, 8
+    sub rax, 4
     push rax
-    push 1
+    push 3
     pop rdi
     pop rax
-    mov [rax], edi
+    mov [rax], rdi
     push rdi
     pop rax
     mov rax, rbp
     sub rax, 8
     push rax
-    push 1
+    push 5
     pop rdi
     pop rax
-    imul rdi, 4
-    add rax, rdi
-    push rax
-    push 2
-    pop rdi
-    pop rax
-    mov [rax], edi
+    mov [rax], rdi
     push rdi
     pop rax
     mov rax, rbp
-    sub rax, 8
+    sub rax, 4
     push rax
     pop rax
-    mov eax, [rax]
-    cdqe
+    mov rax, [rax]
     push rax
     mov rax, rbp
     sub rax, 8
     push rax
-    push 1
-    pop rdi
     pop rax
-    imul rdi, 4
-    add rax, rdi
-    push rax
-    pop rax
-    mov eax, [rax]
-    cdqe
+    mov rax, [rax]
     push rax
     pop rdi
     pop rax

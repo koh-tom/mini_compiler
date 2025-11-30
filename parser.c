@@ -50,6 +50,12 @@ int size_of(Type *ty) {
     if (ty->kind == TY_INT) {
         return 4;
     }
+    if (ty->kind == TY_PTR) {
+        return 8;
+    }
+    if (ty->kind == TY_ARRAY) {
+        return size_of(ty->ptr_to) * ty->array_size;
+    }
     return 8;
 }
 
@@ -197,6 +203,19 @@ Node *stmt() {
             error("変数名がありません");
         }
 
+        Type head = {};
+        Type *cur = &head;
+        while (consume("[")) {
+            int len = expect_number();
+            expect("]");
+            cur->ptr_to = calloc(1, sizeof(Type));
+            cur->ptr_to->kind = TY_ARRAY;
+            cur->ptr_to->array_size = len;
+            cur = cur->ptr_to;
+        }
+        cur->ptr_to = ty;
+        ty = head.ptr_to ? head.ptr_to : ty;
+
         // 変数が既に定義されていないか確認
         if (find_lvar(tok)) {
             error("変数が既に定義されています");
@@ -206,7 +225,8 @@ Node *stmt() {
         lvar->next = locals;
         lvar->name = tok->str;
         lvar->len = tok->len;
-        lvar->offset = locals ? locals->offset + 8 : 8;
+        int size = size_of(ty);
+        lvar->offset = locals ? locals->offset + size : size;
         lvar->ty = ty;
         locals = lvar;
 
@@ -281,15 +301,21 @@ Node *add() {
         if (consume("+")) {
             Node *rhs = mul();
             // ポインタ + 整数 の場合
-            if (node->ty && node->ty->kind == TY_PTR) {
+            if (node->ty && (node->ty->kind == TY_PTR || node->ty->kind == TY_ARRAY)) {
                 Node *ptr_add = new_node(ND_PTR_ADD, node, rhs);
                 ptr_add->ty = node->ty;
+                if (node->ty->kind == TY_ARRAY) {
+                    ptr_add->ty = new_type(TY_PTR, node->ty->ptr_to);
+                }
                 node = ptr_add;
             }
             // 整数 + ポインタ の場合
-            else if (rhs->ty && rhs->ty->kind == TY_PTR) {
+            else if (rhs->ty && (rhs->ty->kind == TY_PTR || rhs->ty->kind == TY_ARRAY)) {
                 Node *ptr_add = new_node(ND_PTR_ADD, rhs, node);
                 ptr_add->ty = rhs->ty;
+                if (rhs->ty->kind == TY_ARRAY) {
+                    ptr_add->ty = new_type(TY_PTR, rhs->ty->ptr_to);
+                }
                 node = ptr_add;
             }
             // 通常の加算
@@ -300,9 +326,12 @@ Node *add() {
         } else if (consume("-")) {
             Node *rhs = mul();
             // ポインタ - 整数 の場合
-            if (node->ty && node->ty->kind == TY_PTR) {
+            if (node->ty && (node->ty->kind == TY_PTR || node->ty->kind == TY_ARRAY)) {
                 Node *ptr_sub = new_node(ND_PTR_SUB, node, rhs);
                 ptr_sub->ty = node->ty;
+                if (node->ty->kind == TY_ARRAY) {
+                    ptr_sub->ty = new_type(TY_PTR, node->ty->ptr_to);
+                }
                 node = ptr_sub;
             }
             // 通常の減算
@@ -348,7 +377,7 @@ Node *unary() {
     } else if (consume("*")) {
         Node *operand = unary();
         Node *deref = new_node(ND_DEREF, operand, NULL);
-        if (operand->ty && operand->ty->kind == TY_PTR) {
+        if (operand->ty && (operand->ty->kind == TY_PTR || operand->ty->kind == TY_ARRAY)) {
             deref->ty = operand->ty->ptr_to;
         }
         return deref;
@@ -357,10 +386,11 @@ Node *unary() {
 }
 
 Node *primary() {
+    Node *node;
     Token *tok = consume_ident();
     if (tok) {
         if (consume("(")) {
-            Node *node = calloc(1, sizeof(Node));
+            node = calloc(1, sizeof(Node));
             node->kind = ND_FUNCALL;
             node->funcname = tok->str;
             node->funcname_len = tok->len;
@@ -376,24 +406,43 @@ Node *primary() {
                 cur = cur->next;
             }
             node->args = head.next;
-            return node;
-        }
-        Node *node = calloc(1, sizeof(Node));
-        node->kind = ND_LVAR;
-        LVar *lvar = find_lvar(tok);
-        if (lvar) {
-            node->offset = lvar->offset;
-            node->ty = lvar->ty;
         } else {
-            error("未定義の変数です");
+            node = calloc(1, sizeof(Node));
+            node->kind = ND_LVAR;
+            LVar *lvar = find_lvar(tok);
+            if (lvar) {
+                node->offset = lvar->offset;
+                node->ty = lvar->ty;
+            } else {
+                error("未定義の変数です");
+            }
         }
-        return node;
+    } else if (consume("(")) {
+        node = expr();
+        expect(")");
+    } else {
+        node = new_node_num(expect_number());
     }
 
-    if (consume("(")) {
-        Node *node = expr();
-        expect(")");
-        return node;
+    while (consume("[")) {
+        Node *idx = expr();
+        expect("]");
+        Type *ptr_ty = node->ty;
+        if (!ptr_ty) {
+            error("添字演算子の対象が不正です");
+        }
+
+        if (ptr_ty->kind == TY_ARRAY) {
+            ptr_ty = new_type(TY_PTR, ptr_ty->ptr_to);
+        } else if (ptr_ty->kind != TY_PTR) {
+            error("添字演算子はポインタまたは配列にのみ適用できます");
+        }
+
+        // ポインタ演算
+        Node *add = new_node(ND_PTR_ADD, node, idx);
+        add->ty = ptr_ty;
+        node = new_node(ND_DEREF, add, NULL);
+        node->ty = ptr_ty->ptr_to;
     }
-    return new_node_num(expect_number());
+    return node;
 }

@@ -58,6 +58,31 @@ void gen_lvar(Node *node) {
     printf("    push rax\n");
 }
 
+void load(Type *ty) {
+    if (ty->kind == TY_ARRAY) {
+        return;
+    }
+    printf("    pop rax\n");
+    if (size_of(ty) == 4) {
+        printf("    mov eax, [rax]\n");
+        printf("    cdqe\n");
+    } else {
+        printf("    mov rax, [rax]\n");
+    }
+    printf("    push rax\n");
+}
+
+void store(Type *ty) {
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    if (size_of(ty) == 4) {
+        printf("    mov [rax], edi\n");
+    } else {
+        printf("    mov [rax], rdi\n");
+    }
+    printf("    push rdi\n");
+}
+
 void gen(Node *node) {
     switch (node->kind) {
     case ND_NUM:
@@ -65,17 +90,12 @@ void gen(Node *node) {
         return;
     case ND_LVAR:
         gen_lvar(node);
-        printf("    pop rax\n");
-        printf("    mov rax, [rax]\n");
-        printf("    push rax\n");
+        load(node->ty);
         return;
     case ND_ASSIGN:
         gen_lvar(node->lhs);
         gen(node->rhs);
-        printf("    pop rdi\n");
-        printf("    pop rax\n");
-        printf("    mov [rax], rdi\n");
-        printf("    push rdi\n");
+        store(node->lhs->ty);
         return;
     case ND_RETURN:
         gen(node->lhs);
@@ -170,9 +190,7 @@ void gen(Node *node) {
         return;
     case ND_DEREF:
         gen(node->lhs);
-        printf("    pop rax\n");
-        printf("    mov rax, [rax]\n");
-        printf("    push rax\n");
+        load(node->ty);
         return;
     case ND_PTR_ADD:
         gen(node->lhs); // ポインタ
