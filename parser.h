@@ -80,6 +80,7 @@ struct LVar {
 // パーサー関数
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
+Type *new_type(TypeKind kind, Type *ptr_to);
 int size_of(Type *ty);
 void program();
 Node *function();

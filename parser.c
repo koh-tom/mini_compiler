@@ -18,6 +18,7 @@ Node *new_node_num(int val) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_NUM;
     node->val = val;
+    node->ty = new_type(TY_INT, NULL);
     return node;
 }
 
@@ -294,6 +295,7 @@ Node *add() {
             // 通常の加算
             else {
                 node = new_node(ND_ADD, node, rhs);
+                node->ty = new_type(TY_INT, NULL);
             }
         } else if (consume("-")) {
             Node *rhs = mul();
@@ -306,6 +308,7 @@ Node *add() {
             // 通常の減算
             else {
                 node = new_node(ND_SUB, node, rhs);
+                node->ty = new_type(TY_INT, NULL);
             }
         } else {
             return node;
@@ -332,6 +335,9 @@ Node *unary() {
         return unary();
     } else if (consume("-")) {
         return new_node(ND_SUB, new_node_num(0), unary());
+    } else if (consume_keyword(TK_SIZEOF)) {
+        Node *node = unary();
+        return new_node_num(size_of(node->ty));
     } else if (consume("&")) {
         Node *operand = unary();
         Node *addr = new_node(ND_ADDR, operand, NULL);
