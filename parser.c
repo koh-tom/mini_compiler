@@ -428,6 +428,20 @@ Node *primary() {
         Node *idx = expr();
         expect("]");
         Type *ptr_ty = node->ty;
+        Node *base = node;
+        Node *index = idx;
+
+        // node がポインタ/配列でない場合、idx がポインタ/配列かチェック
+        // 2[a] のような場合に対応
+        if (ptr_ty && ptr_ty->kind != TY_PTR && ptr_ty->kind != TY_ARRAY) {
+            if (idx->ty && (idx->ty->kind == TY_PTR || idx->ty->kind == TY_ARRAY)) {
+                // 入れ替え: 2[a] -> a[2]
+                base = idx;
+                index = node;
+                ptr_ty = idx->ty;
+            }
+        }
+
         if (!ptr_ty) {
             error("添字演算子の対象が不正です");
         }
@@ -439,7 +453,7 @@ Node *primary() {
         }
 
         // ポインタ演算
-        Node *add = new_node(ND_PTR_ADD, node, idx);
+        Node *add = new_node(ND_PTR_ADD, base, index);
         add->ty = ptr_ty;
         node = new_node(ND_DEREF, add, NULL);
         node->ty = ptr_ty->ptr_to;

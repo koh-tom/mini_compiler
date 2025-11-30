@@ -7,7 +7,28 @@ main:
     push 0
     pop rax
     mov rax, rbp
-    sub rax, 8
+    sub rax, 12
+    push rax
+    push 0
+    pop rdi
+    pop rax
+    imul rdi, 4
+    add rax, rdi
+    push rax
+    push 0
+    pop rdi
+    pop rax
+    mov [rax], edi
+    push rdi
+    pop rax
+    mov rax, rbp
+    sub rax, 12
+    push rax
+    push 1
+    pop rdi
+    pop rax
+    imul rdi, 4
+    add rax, rdi
     push rax
     push 1
     pop rdi
@@ -16,9 +37,9 @@ main:
     push rdi
     pop rax
     mov rax, rbp
-    sub rax, 8
+    sub rax, 12
     push rax
-    push 1
+    push 2
     pop rdi
     pop rax
     imul rdi, 4
@@ -31,16 +52,9 @@ main:
     push rdi
     pop rax
     mov rax, rbp
-    sub rax, 8
+    sub rax, 12
     push rax
-    pop rax
-    mov eax, [rax]
-    cdqe
-    push rax
-    mov rax, rbp
-    sub rax, 8
-    push rax
-    push 1
+    push 2
     pop rdi
     pop rax
     imul rdi, 4
@@ -49,10 +63,6 @@ main:
     pop rax
     mov eax, [rax]
     cdqe
-    push rax
-    pop rdi
-    pop rax
-    add rax, rdi
     push rax
     pop rax
     mov rsp, rbp
