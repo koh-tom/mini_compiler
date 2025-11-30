@@ -18,6 +18,9 @@ int main(int argc, char **argv) {
 
     printf(".intel_syntax noprefix\n");
 
+    // グローバル変数のコード生成
+    gen_globals();
+
     // 各関数のコード生成
     for (int i = 0; code[i]; i++) {
         gen_function(code[i]);

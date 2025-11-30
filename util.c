@@ -16,6 +16,9 @@ LVar *locals;
 // ラベルカウンタ
 int label_count;
 
+// グローバル変数のリスト
+GVar *globals;
+
 // エラー監視用の関数
 // printfと同じ引数をとる
 void error(char *fmt, ...) {

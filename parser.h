@@ -29,6 +29,7 @@ typedef enum {
     ND_DEREF, // *
     ND_PTR_ADD, // ポインタ + 整数
     ND_PTR_SUB, // ポインタ - 整数
+    ND_GVAR, // グローバル変数
 } NodeKind;
 
 typedef struct LVar LVar;
@@ -65,6 +66,8 @@ struct Node {
     Node *next;       // 次の文（ブロック内で使用）
     char *funcname;   // kindがND_FUNCALL/ND_FUNCDEFの場合の関数名
     int funcname_len; // 関数名の長さ
+    char *gvar_name;  // kindがND_GVARの場合のグローバル変数名
+    int gvar_name_len; // グローバル変数名の長さ
     Node *args;       // kindがND_FUNCCALLの場合の引数（リンクリスト）
     Node *params;     // kindがND_FUNCDEFの場合の仮引数（リンクリスト）
     Node *body;       // kindがND_FUNCDEFの場合の関数本体
@@ -78,12 +81,24 @@ struct LVar {
     int len;    // 名前の長さ
     int offset; // RBPからのオフセット
     Type *ty;   // 型
+    bool is_local; // ローカル変数かどうか
+};
+
+typedef struct GVar GVar;
+
+//グローバル変数の型
+struct GVar {
+    GVar *next; // 次の変数かNULL
+    char *name; // 変数の名前
+    int len;    // 名前の長さ
+    Type *ty;   // 型
 };
 
 // パーサー関数
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 Type *new_type(TypeKind kind, Type *ptr_to);
+Type *expect_type();
 int size_of(Type *ty);
 void program();
 Node *function();

@@ -114,5 +114,9 @@ assert 12 'int main() { int a[2][3]; return sizeof(a[0]); }'
 assert 4 'int main() { int a[2][3]; return sizeof(a[0][0]); }'
 assert 3 'int main() { int a[2]; *a = 1; *(a+1) = 2; int *p; p = a; return *p + *(p + 1); }'
 assert 2 'int main() { int a[3]; a[0]=0; a[1]=1; a[2]=2; return 2[a]; }'
+assert 5 'int x; int main() { x=5; return x; }'
+assert 10 'int x; int main() { x=10; return x; }'
+assert 3 'int x; int main() { int x; x=3; return x; }'
+assert 7 'int x; int y; int main() { x=3; y=4; return x+y; }'
 
 echo OK

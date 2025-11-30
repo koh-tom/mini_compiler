@@ -8,6 +8,20 @@
 // x86-64 ABIの引数レジスタ
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
+// グローバル変数のコード生成
+void gen_globals() {
+    if (!globals) {
+        return;
+    }
+    printf(".data\n");
+    for (GVar *var = globals; var; var = var->next) {
+        printf(".globl %.*s\n", var->len, var->name);
+        printf("%.*s:\n", var->len, var->name);
+        printf("    .zero %d\n", size_of(var->ty));
+    }
+    printf(".text\n");
+}
+
 // 関数定義のコード生成
 void gen_function(Node *fn) {
     // 関数ラベル
@@ -92,8 +106,21 @@ void gen(Node *node) {
         gen_lvar(node);
         load(node->ty);
         return;
+    case ND_GVAR:
+        // グローバル変数のアドレスを取得 (RIP相対)
+        printf("    lea rax, %.*s[rip]\n", node->gvar_name_len, node->gvar_name);
+        printf("    push rax\n");
+        load(node->ty);
+        return;
     case ND_ASSIGN:
-        gen_lvar(node->lhs);
+        if (node->lhs->kind == ND_GVAR) {
+            // グローバル変数への代入
+            printf("    lea rax, %.*s[rip]\n", node->lhs->gvar_name_len, node->lhs->gvar_name);
+            printf("    push rax\n");
+        } else {
+            // ローカル変数への代入
+            gen_lvar(node->lhs);
+        }
         gen(node->rhs);
         store(node->lhs->ty);
         return;

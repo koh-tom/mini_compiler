@@ -31,10 +31,107 @@ LVar *find_lvar(Token *tok) {
     return NULL;
 }
 
+GVar *find_gvar(Token *tok) {
+    for (GVar *var = globals; var; var = var->next) {
+        if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+            return var;
+        }
+    }
+    return NULL;
+}
+
 void program() {
+    globals = NULL;
     int i = 0;
     while (!at_eof()) {
-        code[i++] = function();
+        // 型を読む
+        Type *base_ty = expect_type();
+
+        // 識別子を読む
+        Token *tok = consume_ident();
+        if (!tok) {
+            error("識別子がありません");
+        }
+
+        // 次のトークンが '(' なら関数定義、そうでなければグローバル変数定義
+        if (consume("(")) {
+            // 関数定義
+            locals = NULL;
+
+            // 引数リストをパース
+            Node head = {};
+            Node *cur = &head;
+            while (!consume(")")) {
+                if (cur != &head) {
+                    expect(",");
+                }
+
+                Type *ty = expect_type();
+
+                Token *param = consume_ident();
+                if (!param) {
+                    error("引数名がありません");
+                }
+
+                // 引数をローカル変数として登録
+                LVar *lvar = calloc(1, sizeof(LVar));
+                lvar->next = locals;
+                lvar->name = param->str;
+                lvar->len = param->len;
+                lvar->offset = locals ? locals->offset + 8 : 8;
+                lvar->ty = ty;
+                lvar->is_local = true;
+                locals = lvar;
+
+                // 引数ノードを作成
+                Node *node = calloc(1, sizeof(Node));
+                node->kind = ND_LVAR;
+                node->offset = lvar->offset;
+                node->ty = ty;
+                cur->next = node;
+                cur = cur->next;
+            }
+
+            // 関数本体をパース
+            Node *body = stmt();
+
+            // 関数定義ノードを作成
+            Node *fn = calloc(1, sizeof(Node));
+            fn->kind = ND_FUNCDEF;
+            fn->funcname = tok->str;
+            fn->funcname_len = tok->len;
+            fn->params = head.next;
+            fn->body = body;
+            fn->locals = locals;
+            fn->ty = base_ty;
+
+            code[i++] = fn;
+        } else {
+            // グローバル変数定義
+            // 配列の処理
+            Type head = {};
+            Type *cur = &head;
+            while (consume("[")) {
+                int len = expect_number();
+                expect("]");
+                cur->ptr_to = calloc(1, sizeof(Type));
+                cur->ptr_to->kind = TY_ARRAY;
+                cur->ptr_to->array_size = len;
+                cur = cur->ptr_to;
+            }
+            cur->ptr_to = base_ty;
+            Type *ty = head.ptr_to ? head.ptr_to : base_ty;
+
+            expect(";");
+
+            // グローバル変数をリストに追加
+            GVar *gvar = calloc(1, sizeof(GVar));
+            gvar->next = globals;
+            gvar->name = tok->str;
+            gvar->len = tok->len;
+            gvar->ty = ty;
+            globals = gvar;
+        }
     }
     code[i] = NULL;
 }
@@ -407,14 +504,24 @@ Node *primary() {
             }
             node->args = head.next;
         } else {
-            node = calloc(1, sizeof(Node));
-            node->kind = ND_LVAR;
+            // 変数参照: まずローカル変数を探し、なければグローバル変数を探す
             LVar *lvar = find_lvar(tok);
             if (lvar) {
+                node = calloc(1, sizeof(Node));
+                node->kind = ND_LVAR;
                 node->offset = lvar->offset;
                 node->ty = lvar->ty;
             } else {
-                error("未定義の変数です");
+                GVar *gvar = find_gvar(tok);
+                if (gvar) {
+                    node = calloc(1, sizeof(Node));
+                    node->kind = ND_GVAR;
+                    node->gvar_name = gvar->name;
+                    node->gvar_name_len = gvar->len;
+                    node->ty = gvar->ty;
+                } else {
+                    error("未定義の変数です");
+                }
             }
         }
     } else if (consume("(")) {
