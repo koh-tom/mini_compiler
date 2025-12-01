@@ -77,10 +77,15 @@ void load(Type *ty) {
         return;
     }
     printf("    pop rax\n");
-    if (size_of(ty) == 4) {
+    if (size_of(ty) == 1) {
+        // char型: 1バイト読み込み、符号拡張
+        printf("    movsx rax, byte ptr [rax]\n");
+    } else if (size_of(ty) == 4) {
+        // int型: 4バイト読み込み、符号拡張
         printf("    mov eax, [rax]\n");
         printf("    cdqe\n");
     } else {
+        // ポインタ型: 8バイト読み込み
         printf("    mov rax, [rax]\n");
     }
     printf("    push rax\n");
@@ -89,9 +94,14 @@ void load(Type *ty) {
 void store(Type *ty) {
     printf("    pop rdi\n");
     printf("    pop rax\n");
-    if (size_of(ty) == 4) {
+    if (size_of(ty) == 1) {
+        // char型: 1バイト書き込み
+        printf("    mov [rax], dil\n");
+    } else if (size_of(ty) == 4) {
+        // int型: 4バイト書き込み
         printf("    mov [rax], edi\n");
     } else {
+        // ポインタ型: 8バイト書き込み
         printf("    mov [rax], rdi\n");
     }
     printf("    push rdi\n");

@@ -153,14 +153,21 @@ int size_of(Type *ty) {
     if (ty->kind == TY_ARRAY) {
         return size_of(ty->ptr_to) * ty->array_size;
     }
+    if (ty->kind == TY_CHAR) {
+        return 1;
+    }
     return 8;
 }
 
 Type *expect_type() {
-    if (!consume_keyword(TK_INT)) {
+    Type *ty;
+    if (consume_keyword(TK_CHAR)) {
+        ty = new_type(TY_CHAR, NULL);
+    } else if (consume_keyword(TK_INT)) {
+        ty = new_type(TY_INT, NULL);
+    } else {
         error("型ではありません");
     }
-    Type *ty = new_type(TY_INT, NULL);
     while (consume("*")) {
         ty = new_type(TY_PTR, ty);
     }
@@ -288,12 +295,9 @@ Node *stmt() {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
-    } else if (consume_keyword(TK_INT)) {
-        // 変数宣言: int x; または int *p;
-        Type *ty = new_type(TY_INT, NULL);
-        while (consume("*")) {
-            ty = new_type(TY_PTR, ty);
-        }
+    } else if (token->kind == TK_INT || token->kind == TK_CHAR) {
+        // 変数宣言: int x; または char x; または int *p;
+        Type *ty = expect_type();
 
         Token *tok = consume_ident();
         if (!tok) {

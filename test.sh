@@ -118,5 +118,12 @@ assert 5 'int x; int main() { x=5; return x; }'
 assert 10 'int x; int main() { x=10; return x; }'
 assert 3 'int x; int main() { int x; x=3; return x; }'
 assert 7 'int x; int y; int main() { x=3; y=4; return x+y; }'
+assert 0 'int x; int y[20]; int main() { return x + y[5]; }'
+assert 1 'int main() { char x; x=1; return x; }'
+assert 3 'int main() { char x; char y; x=1; y=2; return x+y; }'
+assert 3 'int main() { char x[3]; x[0]=-1; x[1]=2; int y; y=4; return x[0]+y; }'
+assert 1 'int main() { char x; return sizeof(x); }'
+assert 3 'int main() { char x[3]; return sizeof(x); }'
+assert 10 'int main() { char x[10]; return sizeof(x); }'
 
 echo OK
