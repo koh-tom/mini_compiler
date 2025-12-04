@@ -16,6 +16,7 @@ extern Node *code[100];
 extern LVar *locals;
 extern int label_count;
 extern GVar *globals;
+extern StringLiteral *string_literals;
 
 // エラー処理関数
 void error(char *fmt, ...);

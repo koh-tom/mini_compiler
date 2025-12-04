@@ -19,6 +19,9 @@ int label_count;
 // グローバル変数のリスト
 GVar *globals;
 
+// 文字列リテラルのリスト
+StringLiteral *string_literals;
+
 // エラー監視用の関数
 // printfと同じ引数をとる
 void error(char *fmt, ...) {

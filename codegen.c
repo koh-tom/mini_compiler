@@ -8,6 +8,22 @@
 // x86-64 ABIの引数レジスタ
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
+// 文字列リテラルのコード生成
+void gen_string_literals() {
+    if (!string_literals) {
+        return;
+    }
+    printf(".data\n");
+    for (StringLiteral *str = string_literals; str; str = str->next) {
+        printf(".LC%d:\n", str->label_num);
+        printf("    .string \"");
+        for (int i = 0; i < str->len; i++) {
+            printf("%c", str->str[i]);
+        }
+        printf("\"\n");
+    }
+}
+
 // グローバル変数のコード生成
 void gen_globals() {
     if (!globals) {
@@ -160,6 +176,7 @@ void gen(Node *node) {
             printf("    sub rsp, %d\n", alignment);
         }
 
+        printf("    mov al, 0\n");
         printf("    call %.*s\n", node->funcname_len, node->funcname);
 
         if (alignment > 0) {

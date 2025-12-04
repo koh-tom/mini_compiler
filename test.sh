@@ -126,4 +126,11 @@ assert 1 'int main() { char x; return sizeof(x); }'
 assert 3 'int main() { char x[3]; return sizeof(x); }'
 assert 10 'int main() { char x[10]; return sizeof(x); }'
 
+assert 97 'int main() { char *x = "abc"; return x[0]; }'
+assert 98 'int main() { char *x = "abc"; return x[1]; }'
+assert 99 'int main() { char *x = "abc"; return x[2]; }'
+assert 0 'int main() { char *x = "abc"; return x[3]; }'
+assert 4 'int main() { return sizeof("abc"); }'
+assert 8 'int main() { return sizeof("abc" + 1); }'
+
 echo OK

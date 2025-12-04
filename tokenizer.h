@@ -8,6 +8,7 @@ typedef enum {
     TK_RESERVED, // 記号
     TK_IDENT,    // 識別子
     TK_NUM,      // 整数
+    TK_STRING,   // 文字列リテラル
     TK_EOF,      // 終端
     TK_SEMI,     // ;
     TK_RETURN,   // return

@@ -151,6 +151,21 @@ Token *tokenize() {
             continue;
         }
 
+        // 文字列リテラル
+        if (*p == '"') {
+            char *start = p;
+            p++; // 開始の " をスキップ
+            while (*p != '"') {
+                if (*p == '\0') {
+                    error_at(start, "文字列リテラルが閉じられていません");
+                }
+                p++;
+            }
+            p++;                                                       // 終了の " をスキップ
+            cur = new_token(TK_STRING, cur, start + 1, p - start - 2); // " を除いた部分
+            continue;
+        }
+
         if (isalpha(*p)) {
             char *start = p;
             while (isalpha(*p) || isdigit(*p) || *p == '_') {

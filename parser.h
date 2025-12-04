@@ -95,6 +95,16 @@ struct GVar {
     Type *ty;   // 型
 };
 
+typedef struct StringLiteral StringLiteral;
+
+// 文字列リテラルの型
+struct StringLiteral {
+    StringLiteral *next; // 次の文字列リテラルかNULL
+    char *str;           // 文字列の内容
+    int len;             // 文字列の長さ
+    int label_num;       // ラベル番号
+};
+
 // パーサー関数
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);

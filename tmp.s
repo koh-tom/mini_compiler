@@ -1,12 +1,14 @@
 .intel_syntax noprefix
+.data
+.LC0:
+    .string "abc"
+.text
 .global main
 main:
     push rbp
     mov rbp, rsp
-    sub rsp, 16
-    push 0
-    pop rax
-    push 10
+    sub rsp, 8
+    push 8
     pop rax
     mov rsp, rbp
     pop rbp

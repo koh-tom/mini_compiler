@@ -18,10 +18,14 @@ int main(int argc, char **argv) {
 
     printf(".intel_syntax noprefix\n");
 
+    // 文字列リテラルのコード生成
+    gen_string_literals();
+
     // グローバル変数のコード生成
     gen_globals();
 
     // 各関数のコード生成
+    printf(".text\n");
     for (int i = 0; code[i]; i++) {
         gen_function(code[i]);
     }

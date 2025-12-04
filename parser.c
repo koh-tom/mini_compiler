@@ -331,12 +331,28 @@ Node *stmt() {
         lvar->ty = ty;
         locals = lvar;
 
-        expect(";");
+        if (consume("=")) {
+            // 初期化式がある場合
+            // 変数への代入として処理する
+            Node *lhs = calloc(1, sizeof(Node));
+            lhs->kind = ND_LVAR;
+            lhs->offset = lvar->offset;
+            lhs->ty = lvar->ty;
 
-        // ND_NUM(0)を返して実質スキップ
-        node = calloc(1, sizeof(Node));
-        node->kind = ND_NUM;
-        node->val = 0;
+            Node *rhs = expr();
+
+            node = calloc(1, sizeof(Node));
+            node->kind = ND_ASSIGN;
+            node->lhs = lhs;
+            node->rhs = rhs;
+        } else {
+            // 初期化式がない場合
+            // ND_NUM(0)を返して実質スキップ
+            node = calloc(1, sizeof(Node));
+            node->kind = ND_NUM;
+            node->val = 0;
+        }
+        expect(";");
         return node;
     } else if (consume(";")) {
         node = calloc(1, sizeof(Node));
@@ -531,6 +547,29 @@ Node *primary() {
     } else if (consume("(")) {
         node = expr();
         expect(")");
+    } else if (token->kind == TK_STRING) {
+        // 文字列リテラル
+        Token *tok = token;
+        token = token->next;
+
+        // 文字列リテラルをリストに追加
+        static int label_counter = 0;
+        StringLiteral *str_lit = calloc(1, sizeof(StringLiteral));
+        str_lit->str = tok->str;
+        str_lit->len = tok->len;
+        str_lit->label_num = label_counter++;
+        str_lit->next = string_literals;
+        string_literals = str_lit;
+
+        // 文字列リテラルのラベルのアドレスを返すノードを作成
+        node = calloc(1, sizeof(Node));
+        node->kind = ND_GVAR;
+        char *label = calloc(1, 10);
+        sprintf(label, ".LC%d", str_lit->label_num);
+        node->gvar_name = label;
+        node->gvar_name_len = strlen(label);
+        node->ty = new_type(TY_ARRAY, new_type(TY_CHAR, NULL));
+        node->ty->array_size = str_lit->len + 1;
     } else {
         node = new_node_num(expect_number());
     }
