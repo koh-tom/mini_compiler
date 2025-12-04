@@ -11,8 +11,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // ファイルを読み込む
+    filename = argv[1];
+    user_input = read_file(filename);
+
     // トークナイズする
-    user_input = argv[1];
     token = tokenize();
     program();
 

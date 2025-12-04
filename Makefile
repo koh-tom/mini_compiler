@@ -1,5 +1,5 @@
 CFLAGS=-std=c11 -g -static
-SRCS=$(wildcard *.c)
+SRCS=$(filter-out tmp.c test_file.c,$(wildcard *.c))
 OBJS=$(patsubst %.c,output/%.o,$(SRCS))
 
 mini_compiler: $(OBJS)

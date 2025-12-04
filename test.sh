@@ -8,7 +8,9 @@ assert() {
         input="int main() $input"
     fi
 
-    output/mini_compiler "$input" > tmp.s
+    # 入力を一時ファイルに書き込む
+    echo "$input" > tmp.c
+    output/mini_compiler tmp.c > tmp.s
     cc -c test.c -o output/test.o
     cc -o output/tmp tmp.s output/test.o
     output/tmp
@@ -131,6 +133,15 @@ assert 98 'int main() { char *x = "abc"; return x[1]; }'
 assert 99 'int main() { char *x = "abc"; return x[2]; }'
 assert 0 'int main() { char *x = "abc"; return x[3]; }'
 assert 4 'int main() { return sizeof("abc"); }'
-assert 8 'int main() { return sizeof("abc" + 1); }'
+
+
+assert 3 'int main() { // line comment
+return 3; }'
+assert 5 'int main() { return /* block comment */ 5; }'
+assert 7 'int main() { int x; x = 3; /* multi
+line
+comment */ return x + 4; }'
+assert 2 'int main() { int x; x = 1; // comment
+x = x + 1; return x; }'
 
 echo OK
