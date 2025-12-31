@@ -80,6 +80,13 @@ void gen_lvar(Node *node) {
         gen(node->lhs);
         return;
     }
+    if (node->kind == ND_MEMBER) {
+        gen_lvar(node->lhs);
+        printf("    pop rax\n");
+        printf("    add rax, %d\n", node->member->offset);
+        printf("    push rax\n");
+        return;
+    }
     if (node->kind != ND_LVAR) {
         error("代入の左辺値が変数ではありません。\n");
     }
@@ -129,6 +136,10 @@ void gen(Node *node) {
         printf("    push %d\n", node->val);
         return;
     case ND_LVAR:
+        gen_lvar(node);
+        load(node->ty);
+        return;
+    case ND_MEMBER:
         gen_lvar(node);
         load(node->ty);
         return;

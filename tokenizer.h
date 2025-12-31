@@ -19,6 +19,9 @@ typedef enum {
     TK_INT,      // int
     TK_SIZEOF,   // sizeof
     TK_CHAR,     // char
+    TK_STRUCT,   // struct
+    TK_VOID,     // void
+    TK_TYPEDEF,  // typedef
 } TokenKind;
 
 typedef struct Token Token;
@@ -39,6 +42,7 @@ Token *consume_ident();
 void expect(char *op);
 int expect_number();
 bool at_eof();
+bool peek(char *op);
 Token *tokenize();
 
 #endif

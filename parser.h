@@ -30,24 +30,37 @@ typedef enum {
     ND_PTR_ADD, // ポインタ + 整数
     ND_PTR_SUB, // ポインタ - 整数
     ND_GVAR, // グローバル変数
+    ND_MEMBER, // 構造体メンバアクセス
 } NodeKind;
 
 typedef struct LVar LVar;
 typedef struct Node Node;
-
 typedef struct Type Type;
+typedef struct Member Member;
 
 typedef enum {
     TY_INT,
     TY_PTR,
     TY_ARRAY,
     TY_CHAR,
+    TY_STRUCT,
+    TY_VOID,
 } TypeKind;
 
 struct Type {
     TypeKind kind;
     Type *ptr_to;
     size_t array_size; // 配列のサイズ
+    Member *members;   // 構造体のメンバ
+    int size;          // 構造体のサイズ
+};
+
+struct Member {
+    Member *next;
+    Type *ty;
+    char *name;
+    int len;
+    int offset;
 };
 
 // 抽象構文木のノードの型
@@ -69,6 +82,7 @@ struct Node {
     int funcname_len; // 関数名の長さ
     char *gvar_name;  // kindがND_GVARの場合のグローバル変数名
     int gvar_name_len; // グローバル変数名の長さ
+    Member *member;   // kindがND_MEMBERの場合のメンバ情報
     Node *args;       // kindがND_FUNCCALLの場合の引数（リンクリスト）
     Node *params;     // kindがND_FUNCDEFの場合の仮引数（リンクリスト）
     Node *body;       // kindがND_FUNCDEFの場合の関数本体

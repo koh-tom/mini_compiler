@@ -40,16 +40,111 @@ GVar *find_gvar(Token *tok) {
     return NULL;
 }
 
+// 構造体のメンバ検索
+Member *find_member(Type *ty, Token *tok) {
+    for (Member *mem = ty->members; mem; mem = mem->next) {
+        if (mem->len == tok->len && !memcmp(mem->name, tok->str, tok->len)) {
+            return mem;
+        }
+    }
+    return NULL;
+}
+
+// 構造体のタグ
+typedef struct Tag Tag;
+struct Tag {
+    Tag *next;
+    char *name;
+    int len;
+    Type *ty;
+};
+
+Tag *structs;
+
+// typedef
+typedef struct Typedef Typedef;
+struct Typedef {
+    Typedef *next;
+    char *name;
+    int len;
+    Type *ty;
+};
+
+Typedef *td_list;
+
+Type *find_typedef(Token *tok) {
+    for (Typedef *td = td_list; td; td = td->next) {
+        if (td->len == tok->len && !memcmp(tok->str, td->name, td->len)) {
+            return td->ty;
+        }
+    }
+    return NULL;
+}
+
+Tag *find_tag(Token *tok) {
+    for (Tag *tag = structs; tag; tag = tag->next) {
+        if (tag->len == tok->len && !memcmp(tok->str, tag->name, tag->len)) {
+            return tag;
+        }
+    }
+    return NULL;
+}
+
+bool is_typename() {
+    if (token->kind == TK_INT || token->kind == TK_CHAR || token->kind == TK_STRUCT || token->kind == TK_VOID) {
+        return true;
+    }
+    if (token->kind == TK_IDENT) {
+        return find_typedef(token) != NULL;
+    }
+    return false;
+}
+
 void program() {
     globals = NULL;
+    td_list = NULL; // typedefリスト初期化
     int i = 0;
     while (!at_eof()) {
+        if (consume_keyword(TK_TYPEDEF)) {
+            Type *base_ty = expect_type();
+            Token *tok = consume_ident();
+            if (!tok) error("識別子がありません");
+
+            // 配列の処理
+            Type head = {};
+            Type *cur = &head;
+            while (consume("[")) {
+                int len = expect_number();
+                expect("]");
+                cur->ptr_to = calloc(1, sizeof(Type));
+                cur->ptr_to->kind = TY_ARRAY;
+                cur->ptr_to->array_size = len;
+                cur = cur->ptr_to;
+            }
+            cur->ptr_to = base_ty;
+            Type *ty = head.ptr_to ? head.ptr_to : base_ty;
+
+            expect(";");
+
+            Typedef *td = calloc(1, sizeof(Typedef));
+            td->name = tok->str;
+            td->len = tok->len;
+            td->ty = ty;
+            td->next = td_list;
+            td_list = td;
+            continue;
+        }
+
         // 型を読む
         Type *base_ty = expect_type();
 
         // 識別子を読む
         Token *tok = consume_ident();
         if (!tok) {
+            // 識別子がない場合、struct A { ... }; のようなタグ定義のみの可能性がある
+            if (base_ty->kind == TY_STRUCT && consume(";")) {
+                continue;
+            }
             error("識別子がありません");
         }
 
@@ -156,7 +251,53 @@ int size_of(Type *ty) {
     if (ty->kind == TY_CHAR) {
         return 1;
     }
+    if (ty->kind == TY_STRUCT) {
+        return ty->size;
+    }
+    if (ty->kind == TY_VOID) {
+        return 1; // dummy
+    }
     return 8;
+}
+
+
+void struct_members(Type *ty) {
+    Member head = {};
+    Member *cur = &head;
+    int offset = 0;
+
+    while (!consume("}")) {
+        Type *basety = expect_type();
+        Token *tok = consume_ident();
+        if (!tok) error("メンバ名がありません");
+
+        Type head = {};
+        Type *cur_ty = &head;
+        while (consume("[")) {
+            int len = expect_number();
+            expect("]");
+            cur_ty->ptr_to = calloc(1, sizeof(Type));
+            cur_ty->ptr_to->kind = TY_ARRAY;
+            cur_ty->ptr_to->array_size = len;
+            cur_ty = cur_ty->ptr_to;
+        }
+        cur_ty->ptr_to = basety;
+        Type *type = head.ptr_to ? head.ptr_to : basety;
+
+        expect(";");
+
+        Member *mem = calloc(1, sizeof(Member));
+        mem->name = tok->str;
+        mem->len = tok->len;
+        mem->ty = type;
+        mem->offset = offset;
+        offset += size_of(type);
+        
+        cur->next = mem;
+        cur = cur->next;
+    }
+    ty->members = head.next;
+    ty->size = offset;
 }
 
 Type *expect_type() {
@@ -165,8 +306,45 @@ Type *expect_type() {
         ty = new_type(TY_CHAR, NULL);
     } else if (consume_keyword(TK_INT)) {
         ty = new_type(TY_INT, NULL);
+    } else if (consume_keyword(TK_VOID)) {
+        ty = new_type(TY_VOID, NULL);
+    } else if (consume_keyword(TK_STRUCT)) {
+        Token *tag_tok = consume_ident();
+        if (tag_tok) {
+             Tag *tag = find_tag(tag_tok);
+             if (tag) {
+                 ty = tag->ty;
+             } else {
+                 ty = calloc(1, sizeof(Type));
+                 ty->kind = TY_STRUCT;
+                 
+                 Tag *t = calloc(1, sizeof(Tag));
+                 t->name = tag_tok->str;
+                 t->len = tag_tok->len;
+                 t->ty = ty;
+                 t->next = structs;
+                 structs = t;
+             }
+             
+             if (consume("{")) {
+                 struct_members(ty);
+             }
+        } else {
+            ty = calloc(1, sizeof(Type));
+            ty->kind = TY_STRUCT;
+            expect("{");
+            struct_members(ty);
+        }
     } else {
-        error("型ではありません");
+        Token *tok = consume_ident();
+        if (tok) {
+            ty = find_typedef(tok);
+            if (!ty) {
+                error_at(tok->str, "型名ではありません");
+            }
+        } else {
+            error("型ではありません");
+        }
     }
     while (consume("*")) {
         ty = new_type(TY_PTR, ty);
@@ -295,8 +473,8 @@ Node *stmt() {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
-    } else if (token->kind == TK_INT || token->kind == TK_CHAR) {
-        // 変数宣言: int x; または char x; または int *p;
+    } else if (is_typename()) {
+        // 変数宣言: int x; または char x; または struct A x; など
         Type *ty = expect_type();
 
         Token *tok = consume_ident();
@@ -482,6 +660,16 @@ Node *unary() {
     } else if (consume("-")) {
         return new_node(ND_SUB, new_node_num(0), unary());
     } else if (consume_keyword(TK_SIZEOF)) {
+        if (consume("(")) {
+            if (is_typename()) {
+                Type *ty = expect_type();
+                expect(")");
+                return new_node_num(size_of(ty));
+            }
+            Node *node = expr();
+            expect(")");
+            return new_node_num(size_of(node->ty));
+        }
         Node *node = unary();
         return new_node_num(size_of(node->ty));
     } else if (consume("&")) {
@@ -574,6 +762,8 @@ Node *primary() {
         node = new_node_num(expect_number());
     }
 
+
+
     while (consume("[")) {
         Node *idx = expr();
         expect("]");
@@ -608,5 +798,43 @@ Node *primary() {
         node = new_node(ND_DEREF, add, NULL);
         node->ty = ptr_ty->ptr_to;
     }
+    
+    while (true) {
+        if (consume(".")) {
+            Token *tok = consume_ident();
+            if (!tok) error("メンバ名がありません");
+            
+            Member *mem = find_member(node->ty, tok);
+            if (!mem) error("そのようなメンバはありません: %.*s", tok->len, tok->str);
+            
+            Node *member_node = new_node(ND_MEMBER, node, NULL);
+            member_node->member = mem;
+            member_node->ty = mem->ty;
+            node = member_node;
+            continue;
+        }
+        if (consume("->")) {
+             Token *tok = consume_ident();
+             if (!tok) error("メンバ名がありません");
+             
+             if (node->ty->kind != TY_PTR || node->ty->ptr_to->kind != TY_STRUCT) {
+                  error("ポインタではありません");
+             }
+             
+             node = new_node(ND_DEREF, node, NULL);
+             node->ty = node->lhs->ty->ptr_to;
+
+             Member *mem = find_member(node->ty, tok);
+             if (!mem) error("そのようなメンバはありません: %.*s", tok->len, tok->str);
+
+             Node *member_node = new_node(ND_MEMBER, node, NULL);
+             member_node->member = mem;
+             member_node->ty = mem->ty;
+             node = member_node;
+             continue;
+        }
+        break;
+    }
+
     return node;
 }

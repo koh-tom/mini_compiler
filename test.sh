@@ -134,6 +134,22 @@ assert 99 'int main() { char *x = "abc"; return x[2]; }'
 assert 0 'int main() { char *x = "abc"; return x[3]; }'
 assert 4 'int main() { return sizeof("abc"); }'
 
+assert 8 'struct A {int a; int b;}; int main() { struct A x; return sizeof(x); }'
+assert 4 'struct A {int a; int b;}; int main() { struct A x; return sizeof(x.a); }'
+assert 3 'struct A {int a; int b;}; int main() { struct A x; x.a=3; return x.a; }'
+assert 7 'struct A {int a; int b;}; int main() { struct A x; x.a=3; x.b=4; return x.a+x.b; }'
+assert 7 'struct A {int a; int b;}; int main() { struct A x; struct A *p; p=&x; x.a=3; x.b=4; return p->a+p->b; }'
+assert 3 'struct A {int a; int b;}; int main() { struct A x; x.a=3; x.b=4; return x.b-1; }'
+assert 8 'struct A {int a; int b;}; int main() { struct A *p; return sizeof(p); }'
+assert 8 'struct A {int a; int b;}; int main() { struct A *p; return sizeof(*p); }'
+assert 5 'struct A {int a; char b;}; int main() { struct A x; x.a=3; x.b=2; return x.a+x.b; }'
+
+assert 3 'typedef int MyInt; int main() { MyInt x=3; return x; }'
+assert 8 'typedef int MyInt; typedef MyInt MyInt2; int main() { MyInt2 x=8; return x; }'
+assert 5 'typedef struct A A; struct A {int a;}; int main() { A x; x.a=5; return x.a; }'
+assert 8 'int main() { void *x; return sizeof(x); }'
+assert 1 'int main() { return sizeof(void); }'
+
 
 assert 3 'int main() { // line comment
 return 3; }'

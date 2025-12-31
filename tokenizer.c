@@ -61,6 +61,13 @@ bool at_eof() {
     return token->kind == TK_EOF;
 }
 
+bool peek(char *op) {
+    if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)) {
+        return false;
+    }
+    return true;
+}
+
 // 新しいトークンを生成する
 Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
     Token *tok = calloc(1, sizeof(Token));
@@ -109,13 +116,13 @@ Token *tokenize() {
             continue;
         }
 
-        if (startswith(p, "==") || startswith(p, "!=") || startswith(p, "<=") || startswith(p, ">=")) {
+        if (startswith(p, "==") || startswith(p, "!=") || startswith(p, "<=") || startswith(p, ">=") || startswith(p, "->")) {
             cur = new_token(TK_RESERVED, cur, p, 2);
             p += 2;
             continue;
         }
 
-        if (strchr("+-*/<>()=;{},&[]", *p)) {
+        if (strchr("+-*/<>()=;{},&[].", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }
@@ -165,6 +172,24 @@ Token *tokenize() {
         if (strncmp(p, "int", 3) == 0 && !is_alnum(p[3])) {
             cur = new_token(TK_INT, cur, p, 3);
             p += 3;
+            continue;
+        }
+
+        if (strncmp(p, "struct", 6) == 0 && !is_alnum(p[6])) {
+            cur = new_token(TK_STRUCT, cur, p, 6);
+            p += 6;
+            continue;
+        }
+
+        if (strncmp(p, "void", 4) == 0 && !is_alnum(p[4])) {
+            cur = new_token(TK_VOID, cur, p, 4);
+            p += 4;
+            continue;
+        }
+
+        if (strncmp(p, "typedef", 7) == 0 && !is_alnum(p[7])) {
+            cur = new_token(TK_TYPEDEF, cur, p, 7);
+            p += 7;
             continue;
         }
 
