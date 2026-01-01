@@ -139,38 +139,120 @@ bool is_typename() {
     return false;
 }
 
+static void parse_typedef() {
+    Type *base_ty = expect_type();
+    Token *tok = consume_ident();
+    if (!tok) error("識別子がありません");
+
+    // 配列の処理
+    Type head = {};
+    Type *cur = &head;
+    while (consume("[")) {
+        int len = expect_number();
+        expect("]");
+        cur->ptr_to = calloc(1, sizeof(Type));
+        cur->ptr_to->kind = TY_ARRAY;
+        cur->ptr_to->array_size = len;
+        cur = cur->ptr_to;
+    }
+    cur->ptr_to = base_ty;
+    Type *ty = head.ptr_to ? head.ptr_to : base_ty;
+
+    expect(";");
+
+    Typedef *td = calloc(1, sizeof(Typedef));
+    td->name = tok->str;
+    td->len = tok->len;
+    td->ty = ty;
+    td->next = td_list;
+    td_list = td;
+}
+
+static Node *parse_function_def(Type *base_ty, Token *tok) {
+    locals = NULL;
+
+    // 引数リストをパース
+    Node head = {};
+    Node *cur = &head;
+    while (!consume(")")) {
+        if (cur != &head) {
+            expect(",");
+        }
+
+        Type *ty = expect_type();
+
+        Token *param = consume_ident();
+        if (!param) {
+            error("引数名がありません");
+        }
+
+        // 引数をローカル変数として登録
+        LVar *lvar = calloc(1, sizeof(LVar));
+        lvar->next = locals;
+        lvar->name = param->str;
+        lvar->len = param->len;
+        lvar->offset = locals ? locals->offset + 8 : 8;
+        lvar->ty = ty;
+        lvar->is_local = true;
+        locals = lvar;
+
+        // 引数ノードを作成
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_LVAR;
+        node->offset = lvar->offset;
+        node->ty = ty;
+        cur->next = node;
+        cur = cur->next;
+    }
+
+    // 関数本体をパース
+    Node *body = stmt();
+
+    // 関数定義ノードを作成
+    Node *fn = calloc(1, sizeof(Node));
+    fn->kind = ND_FUNCDEF;
+    fn->funcname = tok->str;
+    fn->funcname_len = tok->len;
+    fn->params = head.next;
+    fn->body = body;
+    fn->locals = locals;
+    fn->ty = base_ty;
+    return fn;
+}
+
+static void parse_global_variable(Type *base_ty, Token *tok) {
+    // 配列の処理
+    Type head = {};
+    Type *cur = &head;
+    while (consume("[")) {
+        int len = expect_number();
+        expect("]");
+        cur->ptr_to = calloc(1, sizeof(Type));
+        cur->ptr_to->kind = TY_ARRAY;
+        cur->ptr_to->array_size = len;
+        cur = cur->ptr_to;
+    }
+    cur->ptr_to = base_ty;
+    Type *ty = head.ptr_to ? head.ptr_to : base_ty;
+
+    expect(";");
+
+    // グローバル変数をリストに追加
+    GVar *gvar = calloc(1, sizeof(GVar));
+    gvar->next = globals;
+    gvar->name = tok->str;
+    gvar->len = tok->len;
+    gvar->ty = ty;
+    globals = gvar;
+}
+
 void program() {
     globals = NULL;
     td_list = NULL; // typedefリスト初期化
     int i = 0;
     while (!at_eof()) {
         if (consume_keyword(TK_TYPEDEF)) {
-            Type *base_ty = expect_type();
-            Token *tok = consume_ident();
-            if (!tok) error("識別子がありません");
-
-            // 配列の処理
-            Type head = {};
-            Type *cur = &head;
-            while (consume("[")) {
-                int len = expect_number();
-                expect("]");
-                cur->ptr_to = calloc(1, sizeof(Type));
-                cur->ptr_to->kind = TY_ARRAY;
-                cur->ptr_to->array_size = len;
-                cur = cur->ptr_to;
-            }
-            cur->ptr_to = base_ty;
-            Type *ty = head.ptr_to ? head.ptr_to : base_ty;
-
-            expect(";");
-
-            Typedef *td = calloc(1, sizeof(Typedef));
-            td->name = tok->str;
-            td->len = tok->len;
-            td->ty = ty;
-            td->next = td_list;
-            td_list = td;
+            parse_typedef();
             continue;
         }
 
@@ -189,82 +271,9 @@ void program() {
 
         // 次のトークンが '(' なら関数定義、そうでなければグローバル変数定義
         if (consume("(")) {
-            // 関数定義
-            locals = NULL;
-
-            // 引数リストをパース
-            Node head = {};
-            Node *cur = &head;
-            while (!consume(")")) {
-                if (cur != &head) {
-                    expect(",");
-                }
-
-                Type *ty = expect_type();
-
-                Token *param = consume_ident();
-                if (!param) {
-                    error("引数名がありません");
-                }
-
-                // 引数をローカル変数として登録
-                LVar *lvar = calloc(1, sizeof(LVar));
-                lvar->next = locals;
-                lvar->name = param->str;
-                lvar->len = param->len;
-                lvar->offset = locals ? locals->offset + 8 : 8;
-                lvar->ty = ty;
-                lvar->is_local = true;
-                locals = lvar;
-
-                // 引数ノードを作成
-                Node *node = calloc(1, sizeof(Node));
-                node->kind = ND_LVAR;
-                node->offset = lvar->offset;
-                node->ty = ty;
-                cur->next = node;
-                cur = cur->next;
-            }
-
-            // 関数本体をパース
-            Node *body = stmt();
-
-            // 関数定義ノードを作成
-            Node *fn = calloc(1, sizeof(Node));
-            fn->kind = ND_FUNCDEF;
-            fn->funcname = tok->str;
-            fn->funcname_len = tok->len;
-            fn->params = head.next;
-            fn->body = body;
-            fn->locals = locals;
-            fn->ty = base_ty;
-
-            code[i++] = fn;
+            code[i++] = parse_function_def(base_ty, tok);
         } else {
-            // グローバル変数定義
-            // 配列の処理
-            Type head = {};
-            Type *cur = &head;
-            while (consume("[")) {
-                int len = expect_number();
-                expect("]");
-                cur->ptr_to = calloc(1, sizeof(Type));
-                cur->ptr_to->kind = TY_ARRAY;
-                cur->ptr_to->array_size = len;
-                cur = cur->ptr_to;
-            }
-            cur->ptr_to = base_ty;
-            Type *ty = head.ptr_to ? head.ptr_to : base_ty;
-
-            expect(";");
-
-            // グローバル変数をリストに追加
-            GVar *gvar = calloc(1, sizeof(GVar));
-            gvar->next = globals;
-            gvar->name = tok->str;
-            gvar->len = tok->len;
-            gvar->ty = ty;
-            globals = gvar;
+            parse_global_variable(base_ty, tok);
         }
     }
     code[i] = NULL;
