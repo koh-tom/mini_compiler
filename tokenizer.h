@@ -22,6 +22,7 @@ typedef enum {
     TK_STRUCT,   // struct
     TK_VOID,     // void
     TK_TYPEDEF,  // typedef
+    TK_ENUM,     // enum
 } TokenKind;
 
 typedef struct Token Token;

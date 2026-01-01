@@ -193,6 +193,12 @@ Token *tokenize() {
             continue;
         }
 
+        if (strncmp(p, "enum", 4) == 0 && !is_alnum(p[4])) {
+            cur = new_token(TK_ENUM, cur, p, 4);
+            p += 4;
+            continue;
+        }
+
         // 文字列リテラル
         if (*p == '"') {
             char *start = p;

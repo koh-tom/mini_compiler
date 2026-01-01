@@ -90,8 +90,47 @@ Tag *find_tag(Token *tok) {
     return NULL;
 }
 
+// enum
+typedef struct Enumerator Enumerator;
+struct Enumerator {
+    Enumerator *next;
+    char *name;
+    int len;
+    int val;
+};
+
+Enumerator *enumerators;
+
+Enumerator *find_enumerator(Token *tok) {
+    for (Enumerator *e = enumerators; e; e = e->next) {
+        if (e->len == tok->len && !memcmp(tok->str, e->name, e->len)) {
+            return e;
+        }
+    }
+    return NULL;
+}
+
+typedef struct EnumTag EnumTag;
+struct EnumTag {
+    EnumTag *next;
+    char *name;
+    int len;
+    Type *ty;
+};
+
+EnumTag *enum_tags;
+
+EnumTag *find_enum_tag(Token *tok) {
+    for (EnumTag *tag = enum_tags; tag; tag = tag->next) {
+        if (tag->len == tok->len && !memcmp(tok->str, tag->name, tag->len)) {
+            return tag;
+        }
+    }
+    return NULL;
+}
+
 bool is_typename() {
-    if (token->kind == TK_INT || token->kind == TK_CHAR || token->kind == TK_STRUCT || token->kind == TK_VOID) {
+    if (token->kind == TK_INT || token->kind == TK_CHAR || token->kind == TK_STRUCT || token->kind == TK_VOID || token->kind == TK_ENUM) {
         return true;
     }
     if (token->kind == TK_IDENT) {
@@ -141,8 +180,8 @@ void program() {
         // 識別子を読む
         Token *tok = consume_ident();
         if (!tok) {
-            // 識別子がない場合、struct A { ... }; のようなタグ定義のみの可能性がある
-            if (base_ty->kind == TY_STRUCT && consume(";")) {
+            // 識別子がない場合、struct A { ... }; や enum E { ... }; のようなタグ定義のみの可能性がある
+            if ((base_ty->kind == TY_STRUCT || base_ty->kind == TY_ENUM) && consume(";")) {
                 continue;
             }
             error("識別子がありません");
@@ -254,12 +293,40 @@ int size_of(Type *ty) {
     if (ty->kind == TY_STRUCT) {
         return ty->size;
     }
+    if (ty->kind == TY_ENUM) {
+        return 4;
+    }
     if (ty->kind == TY_VOID) {
         return 1; // dummy
     }
     return 8;
 }
 
+
+void enum_members(Type *ty) {
+    int val = 0;
+    while (!consume("}")) {
+        Token *tok = consume_ident();
+        if (!tok) error("列挙型メンバ名がありません");
+
+        if (consume("=")) {
+            val = expect_number();
+        }
+
+        Enumerator *e = calloc(1, sizeof(Enumerator));
+        e->name = tok->str;
+        e->len = tok->len;
+        e->val = val++;
+        e->next = enumerators;
+        enumerators = e;
+
+        if (consume(",")) {
+            if (peek("}")) {
+                // trailing comma
+            }
+        }
+    }
+}
 
 void struct_members(Type *ty) {
     Member head = {};
@@ -334,6 +401,33 @@ Type *expect_type() {
             ty->kind = TY_STRUCT;
             expect("{");
             struct_members(ty);
+        }
+    } else if (consume_keyword(TK_ENUM)) {
+        Token *tag_tok = consume_ident();
+        if (tag_tok) {
+            EnumTag *tag = find_enum_tag(tag_tok);
+            if (tag) {
+                ty = tag->ty;
+            } else {
+                ty = calloc(1, sizeof(Type));
+                ty->kind = TY_ENUM;
+
+                EnumTag *t = calloc(1, sizeof(EnumTag));
+                t->name = tag_tok->str;
+                t->len = tag_tok->len;
+                t->ty = ty;
+                t->next = enum_tags;
+                enum_tags = t;
+            }
+
+            if (consume("{")) {
+                enum_members(ty);
+            }
+        } else {
+            ty = calloc(1, sizeof(Type));
+            ty->kind = TY_ENUM;
+            expect("{");
+            enum_members(ty);
         }
     } else {
         Token *tok = consume_ident();
@@ -728,7 +822,12 @@ Node *primary() {
                     node->gvar_name_len = gvar->len;
                     node->ty = gvar->ty;
                 } else {
-                    error("未定義の変数です");
+                    Enumerator *en = find_enumerator(tok);
+                    if (en) {
+                        node = new_node_num(en->val);
+                    } else {
+                        error_at(tok->str, "未定義の変数です");
+                    }
                 }
             }
         }

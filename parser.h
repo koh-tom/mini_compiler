@@ -45,6 +45,7 @@ typedef enum {
     TY_CHAR,
     TY_STRUCT,
     TY_VOID,
+    TY_ENUM,
 } TypeKind;
 
 struct Type {

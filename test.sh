@@ -150,6 +150,14 @@ assert 5 'typedef struct A A; struct A {int a;}; int main() { A x; x.a=5; return
 assert 8 'int main() { void *x; return sizeof(x); }'
 assert 1 'int main() { return sizeof(void); }'
 
+assert 0 'enum { zero, one, two }; int main() { return zero; }'
+assert 1 'enum { zero, one, two }; int main() { return one; }'
+assert 2 'enum { zero, one, two }; int main() { return two; }'
+assert 5 'enum { zero, five=5, six }; int main() { return five; }'
+assert 6 'enum { zero, five=5, six }; int main() { return six; }'
+assert 3 'enum Tag { zero, one, two }; int main() { enum Tag x; x=3; return x; }'
+assert 4 'enum Tag { zero, one, two }; int main() { return sizeof(enum Tag); }'
+
 
 assert 3 'int main() { // line comment
 return 3; }'
